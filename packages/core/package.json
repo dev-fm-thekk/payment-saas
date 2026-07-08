@@ -1,0 +1,22 @@
+{
+  "name": "@payment-sdk/core",
+  "version": "0.1.0",
+  "description": "Unified Payment SDK core",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "test": "vitest run"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "razorpay": "^2.9.6",
+    "stripe": "^17.7.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.4.0",
+    "vitest": "^3.0.7"
+  }
+}
