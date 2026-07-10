@@ -6,6 +6,7 @@ dotenv.config({ path: envPath, debug: true});
 const vars =  {
     RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
     RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET,
+    DATABASE_URL: process.env.DATABASE_URL
 }
 
 export default vars;

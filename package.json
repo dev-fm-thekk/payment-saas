@@ -8,7 +8,9 @@
   ],
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/express": "^5.0.6"
+    "@types/express": "^5.0.6",
+    "drizzle-kit": "^1.0.0-rc.4",
+    "tsx": "^4.23.0"
   },
   "scripts": {
     "dev": "bun run --watch src/index.ts"
@@ -17,9 +19,11 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
+    "@payment-sdk/core": "workspace:*",
     "dotenv": "^17.4.2",
+    "drizzle-orm": "^1.0.0-rc.4",
     "express": "^5.2.1",
-    "zod": "^4.4.3",
-    "@payment-sdk/core": "workspace:*"
+    "zod": "^4.4.3"
   }
 }
