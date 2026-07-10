@@ -1,5 +1,4 @@
-import { z, ZodObject } from "zod";
-import type { ZodSchema } from "zod/v3";
+import { z } from "zod";
 
 export const CurrencySchema = z.enum(["INR", "USD"]);
 
