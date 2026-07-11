@@ -1,8 +1,6 @@
 import { pgTable, uuid, text, numeric, timestamp, jsonb, boolean, index, uniqueIndex, foreignKey, primaryKey, unique, check } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
-
-
 export const apiKeys = pgTable("api_keys", {
 	id: uuid().defaultRandom().primaryKey(),
 	companyId: uuid("company_id").notNull().references(() => companies.id, { onDelete: "cascade" } ),
