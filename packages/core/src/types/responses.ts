@@ -1,4 +1,16 @@
-import { PaymentStatus, RefundStatus, AccountStatus, ProviderName } from './enums';
+import { PaymentStatus, RefundStatus, AccountStatus, ProviderName, OrderStatus } from './enums';
+
+export interface OrderResponse {
+  id: string;
+  serviceId?: string;
+  amount: number;
+  currency: string;
+  status: OrderStatus;
+  metadata?: Record<string, string>;
+  providerOrderId?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export interface PaymentResponse {
   id: string;

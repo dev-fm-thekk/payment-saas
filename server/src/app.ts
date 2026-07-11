@@ -5,6 +5,7 @@ import userRouter from './routes/User/route';
 import companyRouter from './routes/Company/route';
 import companyServiceRouter from './routes/CompanyService/route';
 import providerRouter from './routes/Provider/route';
+import paymentRouter from './routes/Payment/route';
 
 const app = express();
 app.use(express.json());
@@ -16,6 +17,7 @@ app.use('/user', userRouter);
 app.use('/company', companyRouter);
 app.use('/service', companyServiceRouter);
 app.use('/provider', providerRouter);
+app.use('/payment', paymentRouter);
 
 // Generic error handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

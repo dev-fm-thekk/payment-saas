@@ -129,3 +129,35 @@ export type CreateServiceType = z.infer<typeof CreateServiceSchema>
 export type UpdateServiceType = z.infer<typeof UpdateServiceSchema>
 export type ServiceReturnType = z.infer<typeof ServiceReturnSchema>
 export type AccessPayloadType = z.infer<typeof AccessPayloadSchema>
+
+// ─── Unified Payment API ──────────────────────────────────────────────────────
+
+export const PayRequestSchema = z.object({
+  serviceId: z.uuid(),
+  amount: z.number().positive(),
+  currency: z.string().length(3),
+  description: z.string().optional(),
+  receipt: z.string().optional(),
+  metadata: z.record(z.string(), z.string()).optional(),
+});
+
+export const RefundRequestSchema = z.object({
+  serviceId: z.uuid(),
+  paymentId: z.string().min(1),
+  amount: z.number().positive().optional(),
+  reason: z.string().optional(),
+  metadata: z.record(z.string(), z.string()).optional(),
+});
+
+export const ListTransactionsRequestSchema = z.object({
+  serviceId: z.uuid(),
+  from: z.coerce.date().optional(),
+  to: z.coerce.date().optional(),
+  status: z.string().optional(),
+  limit: z.coerce.number().int().positive().max(100).default(20),
+  cursor: z.string().optional(),
+});
+
+export type PayRequestType = z.infer<typeof PayRequestSchema>;
+export type RefundRequestType = z.infer<typeof RefundRequestSchema>;
+export type ListTransactionsRequestType = z.infer<typeof ListTransactionsRequestSchema>;

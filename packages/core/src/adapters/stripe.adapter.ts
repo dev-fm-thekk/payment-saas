@@ -1,8 +1,8 @@
 import Stripe from 'stripe';
 import { BaseAdapter } from './base';
 import { ProviderName, ErrorCode } from '../types/enums';
-import { PaymentRequest, RefundRequest, AccountRequest, TransactionFilters } from '../types/requests';
-import { PaymentResponse, RefundResponse, TransactionResponse, AccountResponse } from '../types/responses';
+import { OrderRequest, PaymentRequest, RefundRequest, AccountRequest, TransactionFilters } from '../types/requests';
+import { OrderResponse, PaymentResponse, RefundResponse, TransactionResponse, AccountResponse } from '../types/responses';
 import { PaymentError } from '../errors';
 
 export class StripeAdapter extends BaseAdapter {
@@ -13,6 +13,21 @@ export class StripeAdapter extends BaseAdapter {
     this.client = new Stripe(credentials.apiKey, {
         apiVersion: '2025-01-27' as any,
     });
+  }
+
+  async createOrder(request: OrderRequest): Promise<OrderResponse> {
+    try {
+      const paymentIntent = await this.client.paymentIntents.create({
+        amount: request.amount,
+        currency: request.currency.toLowerCase(),
+        description: request.description,
+        metadata: request.metadata,
+        capture_method: 'manual',
+      });
+      return this.normaliser.normaliseOrder(paymentIntent, ProviderName.STRIPE);
+    } catch (error) {
+      throw this.mapError(error);
+    }
   }
 
   async pay(request: PaymentRequest): Promise<PaymentResponse> {

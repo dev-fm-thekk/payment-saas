@@ -1,7 +1,34 @@
-import { ProviderName, PaymentStatus, RefundStatus, AccountStatus } from './types/enums';
-import { PaymentResponse, RefundResponse, TransactionResponse, AccountResponse } from './types/responses';
+import { ProviderName, PaymentStatus, RefundStatus, AccountStatus, OrderStatus } from './types/enums';
+import type { OrderResponse, PaymentResponse, RefundResponse, TransactionResponse, AccountResponse } from './types/responses';
 
 export class ResponseNormaliser {
+  normaliseOrder(raw: any, provider: ProviderName): OrderResponse {
+    if (provider === ProviderName.RAZORPAY) {
+      return {
+        id: raw.id,
+        amount: raw.amount,
+        currency: raw.currency,
+        status: this.mapRazorpayOrderStatus(raw.status),
+        metadata: raw.notes,
+        providerOrderId: raw.id,
+        createdAt: new Date(raw.created_at * 1000),
+        updatedAt: new Date(raw.created_at * 1000),
+      };
+    } else if (provider === ProviderName.STRIPE) {
+      return {
+        id: raw.id,
+        amount: raw.amount,
+        currency: raw.currency.toUpperCase(),
+        status: OrderStatus.CREATED,
+        metadata: raw.metadata,
+        providerOrderId: raw.id,
+        createdAt: new Date(raw.created * 1000),
+        updatedAt: new Date(raw.created * 1000),
+      };
+    }
+    throw new Error(`Unsupported provider: ${provider}`);
+  }
+
   normalisePayment(raw: any, provider: ProviderName): PaymentResponse {
     if (provider === ProviderName.RAZORPAY) {
       return {
@@ -82,6 +109,15 @@ export class ResponseNormaliser {
           };
     }
     throw new Error(`Unsupported provider: ${provider}`);
+  }
+
+  private mapRazorpayOrderStatus(status: string): OrderStatus {
+    switch (status) {
+      case 'created': return OrderStatus.CREATED;
+      case 'attempted': return OrderStatus.CREATED;
+      case 'paid': return OrderStatus.PAID;
+      default: return OrderStatus.CREATED;
+    }
   }
 
   private mapRazorpayStatus(status: string): PaymentStatus {
