@@ -8,18 +8,29 @@
   ],
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/express": "^5.0.6"
+    "@types/express": "^5.0.6",
+    "drizzle-kit": "^1.0.0-rc.4",
+    "tsx": "^4.23.0"
   },
   "scripts": {
-    "dev": "bun run --watch src/index.ts"
+    "dev": "bun run --watch server/src/app.ts",
+    "build": "bun run --cwd packages/core build",
+    "test": "bun run --cwd packages/core test"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
+    "@payment-sdk/core": "workspace:*",
+    "@types/bcrypt": "^6.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "bcrypt": "^6.0.0",
     "dotenv": "^17.4.2",
+    "drizzle-orm": "^1.0.0-rc.4",
     "express": "^5.2.1",
-    "zod": "^4.4.3",
-    "@payment-sdk/core": "workspace:*"
+    "jsonwebtoken": "^9.0.3",
+    "winston": "^3.19.0",
+    "zod": "^4.4.3"
   }
 }
