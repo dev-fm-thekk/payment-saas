@@ -1,8 +1,8 @@
 import { IPaymentProvider } from '../provider';
 import { ProviderCredentials } from '../types/config';
 import { ResponseNormaliser } from '../normaliser';
-import { PaymentRequest, RefundRequest, AccountRequest, TransactionFilters } from '../types/requests';
-import { PaymentResponse, RefundResponse, TransactionResponse, AccountResponse } from '../types/responses';
+import { OrderRequest, PaymentRequest, RefundRequest, AccountRequest, TransactionFilters } from '../types/requests';
+import { OrderResponse, PaymentResponse, RefundResponse, TransactionResponse, AccountResponse } from '../types/responses';
 import { PaymentError } from '../errors';
 
 export abstract class BaseAdapter implements IPaymentProvider {
@@ -12,6 +12,7 @@ export abstract class BaseAdapter implements IPaymentProvider {
     this.normaliser = new ResponseNormaliser();
   }
 
+  abstract createOrder(request: OrderRequest): Promise<OrderResponse>;
   abstract pay(request: PaymentRequest): Promise<PaymentResponse>;
   abstract capturePayment(paymentId: string, amount: number, currency: string): Promise<PaymentResponse>;
   abstract refund(request: RefundRequest): Promise<RefundResponse>;

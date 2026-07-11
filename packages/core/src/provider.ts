@@ -1,7 +1,8 @@
-import { PaymentRequest, RefundRequest, AccountRequest, TransactionFilters } from './types/requests';
-import { PaymentResponse, RefundResponse, TransactionResponse, AccountResponse } from './types/responses';
+import type { OrderRequest, PaymentRequest, RefundRequest, AccountRequest, TransactionFilters } from './types/requests';
+import type { OrderResponse, PaymentResponse, RefundResponse, TransactionResponse, AccountResponse } from './types/responses';
 
 export interface IPaymentProvider {
+  createOrder(request: OrderRequest): Promise<OrderResponse>;
   pay(request: PaymentRequest): Promise<PaymentResponse>;
   capturePayment(paymentId: string, amount: number, currency: string): Promise<PaymentResponse>;
   refund(request: RefundRequest): Promise<RefundResponse>;

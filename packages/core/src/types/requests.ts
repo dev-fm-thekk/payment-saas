@@ -1,3 +1,14 @@
+import { OrderStatus } from './enums';
+
+export interface OrderRequest {
+  amount: number;
+  currency: string;
+  serviceId?: string;
+  description?: string;
+  receipt?: string;
+  metadata?: Record<string, string>;
+}
+
 export interface PaymentRequest {
   amount: number;
   currency: string;

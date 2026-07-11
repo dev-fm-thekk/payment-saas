@@ -1,8 +1,8 @@
 import Razorpay from 'razorpay';
 import { BaseAdapter } from './base';
 import { ProviderName, ErrorCode } from '../types/enums';
-import { PaymentRequest, RefundRequest, AccountRequest, TransactionFilters } from '../types/requests';
-import { PaymentResponse, RefundResponse, TransactionResponse, AccountResponse } from '../types/responses';
+import { OrderRequest, PaymentRequest, RefundRequest, AccountRequest, TransactionFilters } from '../types/requests';
+import { OrderResponse, PaymentResponse, RefundResponse, TransactionResponse, AccountResponse } from '../types/responses';
 import { PaymentError } from '../errors';
 import { Plans } from 'razorpay/dist/types/plans';
 
@@ -15,6 +15,20 @@ export class RazorpayAdapter extends BaseAdapter {
       key_id: credentials.apiKey,
       key_secret: credentials.apiSecret,
     });
+  }
+
+  async createOrder(request: OrderRequest): Promise<OrderResponse> {
+    try {
+      const order = await this.client.orders.create({
+        amount: request.amount,
+        currency: request.currency,
+        receipt: request.receipt,
+        notes: request.metadata,
+      });
+      return this.normaliser.normaliseOrder(order, ProviderName.RAZORPAY);
+    } catch (error) {
+      throw this.mapError(error);
+    }
   }
 
   async pay(request: PaymentRequest): Promise<PaymentResponse> {
