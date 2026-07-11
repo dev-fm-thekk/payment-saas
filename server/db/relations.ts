@@ -10,7 +10,15 @@ export const relations = defineRelations(schema, (r) => ({
 	},
 	companies: {
 		apiKeys: r.many.apiKeys(),
+		user: r.one.users({
+			from: r.companies.userId,
+			to: r.users.id
+		}),
 		services: r.many.services(),
+	},
+	users: {
+		companies: r.many.companies(),
+		refreshTokens: r.many.refreshTokens(),
 	},
 	orders: {
 		service: r.one.services({
@@ -38,6 +46,12 @@ export const relations = defineRelations(schema, (r) => ({
 		service: r.one.services({
 			from: r.providerConfigs.serviceId,
 			to: r.services.id
+		}),
+	},
+	refreshTokens: {
+		user: r.one.users({
+			from: r.refreshTokens.userId,
+			to: r.users.id
 		}),
 	},
 	refunds: {
