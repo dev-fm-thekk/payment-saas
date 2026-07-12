@@ -69,7 +69,7 @@ export const ProviderConfigSchema = z.object({
 export const CreateProviderConfigInputSchema = z.object({
   serviceId: z.uuid(),
   provider: z.enum(['stripe', 'razorpay']),
-  credentialsEncrypted: z.record(z.string(), z.any()),
+  credentialsEncrypted: z.string(),
 })
 
 export const UpdateProviderConfigInputSchema = z.object({
