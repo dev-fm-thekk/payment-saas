@@ -6,8 +6,10 @@ import companyRouter from './routes/Company/route';
 import companyServiceRouter from './routes/CompanyService/route';
 import providerRouter from './routes/Provider/route';
 import paymentRouter from './routes/Payment/route';
+import cors from 'cors';
 
 const app = express();
+app.use(cors({ origin: ["http://localhost:3001" ] }))
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));

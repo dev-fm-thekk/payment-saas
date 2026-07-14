@@ -106,6 +106,18 @@ export const AccessPayloadSchema = z.object({
   role: z.string(),
 })
 
+export const APIKeySchema = z.object({
+  id: z.uuid(),
+  companyId: z.uuid(),
+  keyHash: z.string(),
+  createdAt: z.date()
+})
+
+
+export const CreateAPIKeySchema = z.object({
+  companyId: z.uuid(),
+})
+
 export function validateSchema(schema: z.ZodSchema<any>, input: any) {
     const result = schema.safeParse(input);
     if (!result.success) return { error: result.error, data: null };
@@ -129,6 +141,7 @@ export type CreateServiceType = z.infer<typeof CreateServiceSchema>
 export type UpdateServiceType = z.infer<typeof UpdateServiceSchema>
 export type ServiceReturnType = z.infer<typeof ServiceReturnSchema>
 export type AccessPayloadType = z.infer<typeof AccessPayloadSchema>
+export type APIKeyType = z.infer<typeof APIKeySchema>;
 
 // ─── Unified Payment API ──────────────────────────────────────────────────────
 

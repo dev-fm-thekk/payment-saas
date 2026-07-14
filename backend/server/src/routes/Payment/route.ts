@@ -30,6 +30,7 @@ paymentRouter.use(authenticateApiKey);
  */
 paymentRouter.post('/pay', async (req: ApiKeyRequest, res, next) => {
     try {
+        req.body.amount = parseInt(req.body.amount)
         const { error: zodError, data } = validateSchema(PayRequestSchema, req.body);
         if (zodError) {
             res.status(400).json({
@@ -49,6 +50,7 @@ paymentRouter.post('/pay', async (req: ApiKeyRequest, res, next) => {
 
         res.status(201).json(result);
     } catch (err) {
+        console.log(err);
         next(err);
     }
 });

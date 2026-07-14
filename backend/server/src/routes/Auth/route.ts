@@ -1,5 +1,12 @@
 import { Router } from 'express';
 import { login, logout, refreshToken } from '../../services/Auth/auth.service';
+import logger from '../../services/logging/logging.service';
+import { authenticate, type AuthRequest } from '../../middlewares/auth.middleware';
+import db from '../../../db';
+import { apiKeys, companies, users } from '../../../db/schema';
+import { eq } from 'drizzle-orm';
+import { APIKeySchema, CreateAPIKeySchema, validateSchema, type APIKeyType } from '../../../utils/schema';
+import { generateRandomToken, hashToken } from '../../../utils/hashing';
 
 const router = Router();
 
@@ -112,5 +119,37 @@ router.post('/refresh', async (req, res, next) => {
         next(err);
     }
 });
+
+
+router.post('/api-key', authenticate, async (req:AuthRequest, res) => {
+    try {
+        const { id, role } = req!.user!;
+
+        console.log(req.user);
+        const {data, error} = validateSchema(CreateAPIKeySchema, req.body);
+        
+        console.log(data);
+        const token = generateRandomToken();
+        data.keyHash = hashToken(token);
+
+        if (error) return res.status(400).send({ error: error })
+        const company = await db.select().from(companies).where(eq(companies.userId, id))
+        if (company.length === 0) return res.status(400).send({ error: "company doesn't exists "});
+        
+        console.log(data);
+        await db.insert(apiKeys).values(data)
+        return res.status(201).send({
+            service: 'api-key-service',
+            operation: 'create',
+            payload: {
+                api_key: token
+            }
+        })
+    } catch(err) {
+        logger.error(err);
+        console.log(err);
+        return res.status(500).send("internal server error")
+    }
+})
 
 export default router;
