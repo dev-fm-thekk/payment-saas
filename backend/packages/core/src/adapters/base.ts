@@ -20,7 +20,7 @@ export abstract class BaseAdapter implements IPaymentProvider {
   abstract createAccount(request: AccountRequest): Promise<AccountResponse>;
   abstract createPlan(request: any): Promise<any>;
   abstract listTransactions(filters: TransactionFilters): Promise<TransactionResponse[]>;
-
+  
   // ─── Webhook management ───────────────────────────────────────────────────
   abstract createWebHook(request: Webhook): Promise<WebhookResponse>;
   abstract listWebhook(webhookId: string, accountId: string): Promise<WebhookResponse>;

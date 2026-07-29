@@ -23,6 +23,7 @@ import type {
 import { PaymentError } from '../errors';
 import type { Plans } from 'razorpay/dist/types/plans';
 import type { Webhooks } from 'razorpay/dist/types/webhooks';
+import { error } from 'console';
 
 export class RazorpayAdapter extends BaseAdapter {
   private client: Razorpay;

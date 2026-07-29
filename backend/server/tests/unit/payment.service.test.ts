@@ -1,5 +1,5 @@
 import { describe, it, expect, mock, beforeEach } from 'bun:test';
-import { processPayment, processRefund, listTransactions } from '../../src/services/Payment/payment.service';
+import { processPayment, processRefund, listTransactions } from '../../src/services/transactions/transaction.service';
 
 const mockDb = {
   select: mock(() => mockDb),

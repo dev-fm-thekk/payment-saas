@@ -5,7 +5,7 @@ import userRouter from './routes/User/route';
 import companyRouter from './routes/Company/route';
 import companyServiceRouter from './routes/CompanyService/route';
 import providerRouter from './routes/Provider/route';
-import paymentRouter from './routes/Payment/route';
+import TransactionRouter from './routes/transactions/route';
 import webhookRouter from './routes/Webhook/route';
 import cors from 'cors';
 
@@ -20,7 +20,7 @@ app.use('/user', userRouter);
 app.use('/company', companyRouter);
 app.use('/service', companyServiceRouter);
 app.use('/provider', providerRouter);
-app.use('/payment', paymentRouter);
+app.use('/payment', TransactionRouter);
 app.use('/webhook', webhookRouter);
 
 // Generic error handler

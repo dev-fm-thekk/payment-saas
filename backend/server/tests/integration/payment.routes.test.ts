@@ -30,7 +30,7 @@ let baseUrl: string;
 
 beforeAll(async () => {
   // Dynamically import the router AFTER mocks are setup
-  const routerModule = await import('../../src/routes/Payment/route');
+  const routerModule = await import('../../src/routes/transactions/route');
   const paymentRouter = routerModule.default;
 
   // Setup express app
