@@ -1,10 +1,28 @@
 import Razorpay from 'razorpay';
+import crypto from 'crypto';
 import { BaseAdapter } from './base';
 import { ProviderName, ErrorCode } from '../types/enums';
-import { OrderRequest, PaymentRequest, RefundRequest, AccountRequest, TransactionFilters } from '../types/requests';
-import { OrderResponse, PaymentResponse, RefundResponse, TransactionResponse, AccountResponse } from '../types/responses';
+import type {
+  OrderRequest,
+  PaymentRequest,
+  RefundRequest,
+  AccountRequest,
+  TransactionFilters,
+  Webhook,
+  WebhookVerificationRequest,
+  UpdateWebhookRequest,
+} from '../types/requests';
+import type {
+  OrderResponse,
+  PaymentResponse,
+  RefundResponse,
+  TransactionResponse,
+  AccountResponse,
+  WebhookResponse,
+} from '../types/responses';
 import { PaymentError } from '../errors';
-import { Plans } from 'razorpay/dist/types/plans';
+import type { Plans } from 'razorpay/dist/types/plans';
+import type { Webhooks } from 'razorpay/dist/types/webhooks';
 
 export class RazorpayAdapter extends BaseAdapter {
   private client: Razorpay;
@@ -16,6 +34,8 @@ export class RazorpayAdapter extends BaseAdapter {
       key_secret: credentials.apiSecret,
     });
   }
+
+  // ─── Payment methods ────────────────────────────────────────────────────────
 
   async createOrder(request: OrderRequest): Promise<OrderResponse> {
     try {
@@ -112,6 +132,152 @@ export class RazorpayAdapter extends BaseAdapter {
     }
   }
 
+  // ─── Webhook management ──────────────────────────────────────────────────────
+
+  /**
+   * Registers a new webhook on the Razorpay account.
+   * Razorpay requires `account_id` when creating webhooks via the Routes API.
+   * For a standard merchant account the SDK creates the webhook at account level.
+   */
+  async createWebHook(request: Webhook): Promise<WebhookResponse> {
+    try {
+      const payload = {
+        url: request.url,
+        alert_email: request.alert_email,
+        secret: request.secret,
+        events: request.events.reduce((acc: Record<string, boolean>, e) => {
+          acc[e] = true;
+          return acc;
+        }, {}),
+      } as Webhooks.RazorpayWebhookCreateRequestBody;
+
+      let raw: any;
+      if (request.accountId) {
+        raw = await this.client.webhooks.create(payload, request.accountId);
+      } else {
+        raw = await this.client.webhooks.create(payload);
+      }
+
+      return this.normaliseWebhook(raw);
+    } catch (err) {
+      throw this.mapError(err);
+    }
+  }
+
+  /**
+   * Fetches a specific webhook by ID.
+   */
+  async listWebhook(webhookId: string, accountId: string): Promise<WebhookResponse> {
+    try {
+      const raw = await this.client.webhooks.fetch(webhookId, accountId);
+      return this.normaliseWebhook(raw);
+    } catch (err) {
+      throw this.mapError(err);
+    }
+  }
+
+  /**
+   * Updates an existing webhook (URL, events, secret, alert_email).
+   * Uses the Razorpay PATCH endpoint via the SDK's `edit` method.
+   */
+  async updateWebhook(request: UpdateWebhookRequest): Promise<WebhookResponse> {
+    try {
+      const payload: Record<string, any> = {};
+      if (request.url) payload['url'] = request.url;
+      if (request.secret) payload['secret'] = request.secret;
+      if (request.alert_email) payload['alert_email'] = request.alert_email;
+      if (request.events) {
+        payload['events'] = request.events.reduce((acc: Record<string, boolean>, e) => {
+          acc[e] = true;
+          return acc;
+        }, {});
+      }
+
+      let raw: any;
+      if (request.accountId) {
+        raw = await (this.client.webhooks as any).edit(payload, request.webhookId, request.accountId);
+      } else {
+        raw = await (this.client.webhooks as any).edit(payload, request.webhookId);
+      }
+
+      return this.normaliseWebhook(raw);
+    } catch (err) {
+      throw this.mapError(err);
+    }
+  }
+
+  /**
+   * Deletes (deactivates) a webhook.
+   * Razorpay does not expose a hard-delete via the public API, so we mark it inactive.
+   * Falls back to a PATCH to deactivate if the SDK does not expose a delete method.
+   */
+  async deleteWebhook(webhookId: string, accountId?: string): Promise<{ deleted: boolean }> {
+    try {
+      if (typeof (this.client.webhooks as any).delete === 'function') {
+        await (this.client.webhooks as any).delete(webhookId, accountId);
+      } else {
+        // Deactivate by setting all events to false
+        const updatePayload = { active: false };
+        if (accountId) {
+          await (this.client.webhooks as any).edit(updatePayload, webhookId, accountId);
+        } else {
+          await (this.client.webhooks as any).edit(updatePayload, webhookId);
+        }
+      }
+      return { deleted: true };
+    } catch (err) {
+      throw this.mapError(err);
+    }
+  }
+
+  /**
+   * Verifies the HMAC-SHA256 signature Razorpay attaches to every webhook.
+   * Header: `X-Razorpay-Signature`
+   *
+   * @param request.rawBody   Raw request body string (before JSON.parse)
+   * @param request.signature Value of the `X-Razorpay-Signature` header
+   * @param request.secret    Webhook secret configured during registration
+   */
+  verifyWebhookSignature(request: WebhookVerificationRequest): boolean {
+    try {
+      const body = typeof request.rawBody === 'string'
+        ? request.rawBody
+        : request.rawBody.toString('utf-8');
+
+      const expectedSignature = crypto
+        .createHmac('sha256', request.secret)
+        .update(body)
+        .digest('hex');
+
+      return crypto.timingSafeEqual(
+        Buffer.from(expectedSignature, 'hex'),
+        Buffer.from(request.signature, 'hex'),
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+  /** Maps a raw Razorpay webhook object to a normalised WebhookResponse. */
+  private normaliseWebhook(raw: any): WebhookResponse {
+    const events = raw.events
+      ? Object.keys(raw.events).filter((k) => raw.events[k] === true)
+      : [];
+
+    return {
+      id: raw.id,
+      url: raw.url,
+      events,
+      active: raw.active ?? true,
+      alertEmail: raw.alert_email,
+      provider: ProviderName.RAZORPAY,
+      createdAt: raw.created_at ? new Date(raw.created_at * 1000) : new Date(),
+      updatedAt: raw.updated_at ? new Date(raw.updated_at * 1000) : new Date(),
+    };
+  }
+
   protected mapError(error: any): PaymentError {
     const message = error?.error?.description || error?.message || 'Razorpay error';
     const providerCode = error?.error?.code || error?.code;
@@ -132,7 +298,7 @@ export class RazorpayAdapter extends BaseAdapter {
       message,
       ProviderName.RAZORPAY,
       providerCode,
-      retryable
+      retryable,
     );
   }
 }

@@ -52,3 +52,20 @@ export interface AccountResponse {
   status: AccountStatus;
   createdAt: Date;
 }
+
+export interface WebhookResponse {
+  /** Internal (provider-assigned) webhook ID */
+  id: string;
+  /** Registered callback URL */
+  url: string;
+  /** Events subscribed to */
+  events: string[];
+  /** Whether the webhook is active */
+  active: boolean;
+  /** Alert email if set */
+  alertEmail?: string;
+  /** Provider this webhook belongs to */
+  provider: ProviderName;
+  createdAt: Date;
+  updatedAt: Date;
+}

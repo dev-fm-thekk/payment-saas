@@ -6,10 +6,11 @@ import companyRouter from './routes/Company/route';
 import companyServiceRouter from './routes/CompanyService/route';
 import providerRouter from './routes/Provider/route';
 import paymentRouter from './routes/Payment/route';
+import webhookRouter from './routes/Webhook/route';
 import cors from 'cors';
 
 const app = express();
-app.use(cors({ origin: ["http://localhost:3001" ] }))
+app.use(cors({ origin: ["http://localhost:3000"], credentials: true }))
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -20,6 +21,7 @@ app.use('/company', companyRouter);
 app.use('/service', companyServiceRouter);
 app.use('/provider', providerRouter);
 app.use('/payment', paymentRouter);
+app.use('/webhook', webhookRouter);
 
 // Generic error handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
@@ -29,4 +31,4 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 
 app.get('/', (_req, res) => res.send('hi welcome to payment gateway'));
 
-app.listen(3000, () => console.log('Server running on port 3000'));
+app.listen(3001, () => console.log('Server running on port 3001'));
