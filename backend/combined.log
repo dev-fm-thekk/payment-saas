@@ -28,3 +28,18 @@
 {"level":"error","service":"user-service"}
 {"code":"INVALID_REQUEST","level":"error","message":"Order amount less than minimum amount allowed","name":"PaymentError","provider":"razorpay","providerErrorCode":"BAD_REQUEST_ERROR","retryable":false,"service":"user-service"}
 {"code":"INVALID_REQUEST","level":"error","message":"Order amount less than minimum amount allowed","name":"PaymentError","provider":"razorpay","providerErrorCode":"BAD_REQUEST_ERROR","retryable":false,"service":"user-service"}
+{"level":"error","message":"[AuthError]: incorrect password","service":"user-service"}
+{"level":"error","message":"[AuthError]: incorrect password","service":"user-service"}
+{"level":"error","message":"[AuthError]: incorrect password","service":"user-service"}
+{"level":"error","message":"[AuthError]: incorrect password","service":"user-service"}
+{"level":"error","message":"[AuthError]: invalid refresh token","service":"user-service"}
+{"level":"error","message":"[AuthError]: invalid refresh token","service":"user-service"}
+{"level":"error","service":"user-service"}
+{"level":"error","service":"user-service"}
+{"level":"error","service":"user-service"}
+{"level":"error","service":"user-service"}
+{"level":"error","service":"user-service"}
+{"level":"error","message":"[AuthError]: incorrect password","service":"user-service"}
+{"level":"error","message":"[AuthError]: incorrect password","service":"user-service"}
+{"level":"error","message":"[AuthError]: incorrect password","service":"user-service"}
+{"level":"error","message":"[AuthError]: incorrect password","service":"user-service"}

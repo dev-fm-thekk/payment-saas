@@ -39,3 +39,33 @@ export interface TransactionFilters {
   limit?: number;
   cursor?: string;
 }
+
+
+export interface Webhook {
+  url: string;
+  events: Array<string>;
+  secret?: string;
+  alert_email?: string;
+  /** Provider-assigned webhook ID (used when fetching/updating) */
+  id?: string;
+  /** Account/entity ID this webhook is scoped to (Razorpay: account_id) */
+  accountId?: string;
+}
+
+export interface WebhookVerificationRequest {
+  /** Raw request body (Buffer or string) */
+  rawBody: string | Buffer;
+  /** Value of the provider's signature header */
+  signature: string;
+  /** Webhook secret used when the webhook was registered */
+  secret: string;
+}
+
+export interface UpdateWebhookRequest {
+  webhookId: string;
+  accountId?: string;
+  url?: string;
+  events?: Array<string>;
+  secret?: string;
+  alert_email?: string;
+}

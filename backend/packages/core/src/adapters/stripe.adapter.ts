@@ -1,8 +1,24 @@
 import Stripe from 'stripe';
 import { BaseAdapter } from './base';
 import { ProviderName, ErrorCode } from '../types/enums';
-import { OrderRequest, PaymentRequest, RefundRequest, AccountRequest, TransactionFilters } from '../types/requests';
-import { OrderResponse, PaymentResponse, RefundResponse, TransactionResponse, AccountResponse } from '../types/responses';
+import type {
+  OrderRequest,
+  PaymentRequest,
+  RefundRequest,
+  AccountRequest,
+  TransactionFilters,
+  Webhook,
+  WebhookVerificationRequest,
+  UpdateWebhookRequest,
+} from '../types/requests';
+import type {
+  OrderResponse,
+  PaymentResponse,
+  RefundResponse,
+  TransactionResponse,
+  AccountResponse,
+  WebhookResponse,
+} from '../types/responses';
 import { PaymentError } from '../errors';
 
 export class StripeAdapter extends BaseAdapter {
@@ -11,9 +27,11 @@ export class StripeAdapter extends BaseAdapter {
   constructor(credentials: any) {
     super(credentials);
     this.client = new Stripe(credentials.apiKey, {
-        apiVersion: '2025-01-27' as any,
+      apiVersion: '2025-01-27' as any,
     });
   }
+
+  // ─── Payment methods ────────────────────────────────────────────────────────
 
   async createOrder(request: OrderRequest): Promise<OrderResponse> {
     try {
@@ -44,7 +62,7 @@ export class StripeAdapter extends BaseAdapter {
     }
   }
 
-  async capturePayment(paymentId: string, amount: number, currency: string): Promise<PaymentResponse> {
+  async capturePayment(paymentId: string, amount: number, _currency: string): Promise<PaymentResponse> {
     try {
       const paymentIntent = await this.client.paymentIntents.capture(paymentId, {
         amount_to_capture: amount,
@@ -92,11 +110,11 @@ export class StripeAdapter extends BaseAdapter {
 
   async createPlan(request: any): Promise<any> {
     try {
-      // Stripe uses Prices/Products for plans. This is a placeholder.
+      // Stripe uses Prices/Products for plans.
       const price = await this.client.prices.create({
         unit_amount: request.item.amount,
         currency: request.item.currency.toLowerCase(),
-        recurring: { interval: request.period === 'daily' ? 'day' : 'month' }, // Simplification
+        recurring: { interval: request.period === 'daily' ? 'day' : 'month' },
         product_data: { name: request.item.name },
       });
       return price;
@@ -117,13 +135,128 @@ export class StripeAdapter extends BaseAdapter {
     }
   }
 
+  // ─── Webhook management ──────────────────────────────────────────────────────
+
+  /**
+   * Registers a new webhook endpoint with Stripe.
+   * Stripe calls these "webhook endpoints" (`stripe.webhookEndpoints`).
+   */
+  async createWebHook(request: Webhook): Promise<WebhookResponse> {
+    try {
+      const endpoint = await this.client.webhookEndpoints.create({
+        url: request.url,
+        enabled_events: request.events as Stripe.WebhookEndpointCreateParams.EnabledEvent[],
+        ...(request.secret ? { secret: request.secret } : {}),
+      });
+      return this.normaliseWebhook(endpoint);
+    } catch (err) {
+      throw this.mapError(err);
+    }
+  }
+
+  /**
+   * Retrieves a specific webhook endpoint by ID.
+   * `accountId` is ignored for Stripe (not applicable at endpoint level).
+   */
+  async listWebhook(webhookId: string, _accountId: string): Promise<WebhookResponse> {
+    try {
+      const endpoint = await this.client.webhookEndpoints.retrieve(webhookId);
+      return this.normaliseWebhook(endpoint);
+    } catch (err) {
+      throw this.mapError(err);
+    }
+  }
+
+  /**
+   * Updates an existing Stripe webhook endpoint.
+   */
+  async updateWebhook(request: UpdateWebhookRequest): Promise<WebhookResponse> {
+    try {
+      const params: Stripe.WebhookEndpointUpdateParams = {};
+      if (request.url) params.url = request.url;
+      if (request.events) {
+        params.enabled_events = request.events as Stripe.WebhookEndpointUpdateParams.EnabledEvent[];
+      }
+
+      const endpoint = await this.client.webhookEndpoints.update(request.webhookId, params);
+      return this.normaliseWebhook(endpoint);
+    } catch (err) {
+      throw this.mapError(err);
+    }
+  }
+
+  /**
+   * Permanently deletes a Stripe webhook endpoint.
+   */
+  async deleteWebhook(webhookId: string, _accountId?: string): Promise<{ deleted: boolean }> {
+    try {
+      const deleted = await this.client.webhookEndpoints.del(webhookId);
+      return { deleted: deleted.deleted };
+    } catch (err) {
+      throw this.mapError(err);
+    }
+  }
+
+  /**
+   * Verifies the signature Stripe attaches to every webhook event.
+   * Uses `stripe.webhooks.constructEvent` which validates the
+   * `Stripe-Signature` header using the endpoint's signing secret.
+   *
+   * @param request.rawBody   Raw request body (Buffer from express.raw() or string)
+   * @param request.signature Value of the `Stripe-Signature` header
+   * @param request.secret    Webhook signing secret (whsec_…) from the Stripe dashboard
+   */
+  verifyWebhookSignature(request: WebhookVerificationRequest): boolean {
+    try {
+      this.client.webhooks.constructEvent(
+        request.rawBody as string | Buffer,
+        request.signature,
+        request.secret,
+      );
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+  /** Maps a raw Stripe WebhookEndpoint object to a normalised WebhookResponse. */
+  private normaliseWebhook(raw: Stripe.WebhookEndpoint): WebhookResponse {
+    return {
+      id: raw.id,
+      url: raw.url,
+      events: raw.enabled_events as string[],
+      active: raw.status === 'enabled',
+      provider: ProviderName.STRIPE,
+      createdAt: new Date(raw.created * 1000),
+      updatedAt: new Date(raw.created * 1000),
+    };
+  }
+
   protected mapError(error: any): PaymentError {
+    const stripeError = error as Stripe.errors.StripeError;
+    let code = ErrorCode.PROVIDER_ERROR;
+    let retryable = true;
+
+    if (stripeError?.type === 'StripeAuthenticationError') {
+      code = ErrorCode.AUTHENTICATION_ERROR;
+      retryable = false;
+    } else if (stripeError?.type === 'StripeInvalidRequestError') {
+      code = ErrorCode.INVALID_REQUEST;
+      retryable = false;
+    } else if (stripeError?.type === 'StripeRateLimitError') {
+      code = ErrorCode.RATE_LIMIT;
+    } else if (stripeError?.type === 'StripeConnectionError') {
+      code = ErrorCode.NETWORK_ERROR;
+    }
+
     return new PaymentError(
-      ErrorCode.PROVIDER_ERROR,
-      error?.message || 'Stripe error',
+      code,
+      stripeError?.message || 'Stripe error',
       ProviderName.STRIPE,
-      error?.code,
-      true
+      stripeError?.code,
+      retryable,
     );
   }
 }

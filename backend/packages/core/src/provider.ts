@@ -1,5 +1,5 @@
-import type { OrderRequest, PaymentRequest, RefundRequest, AccountRequest, TransactionFilters } from './types/requests';
-import type { OrderResponse, PaymentResponse, RefundResponse, TransactionResponse, AccountResponse } from './types/responses';
+import type { OrderRequest, PaymentRequest, RefundRequest, AccountRequest, TransactionFilters, Webhook, WebhookVerificationRequest, UpdateWebhookRequest } from './types/requests';
+import type { OrderResponse, PaymentResponse, RefundResponse, TransactionResponse, AccountResponse, WebhookResponse } from './types/responses';
 
 export interface IPaymentProvider {
   createOrder(request: OrderRequest): Promise<OrderResponse>;
@@ -10,4 +10,10 @@ export interface IPaymentProvider {
   createAccount(request: AccountRequest): Promise<AccountResponse>;
   createPlan(request: any): Promise<any>;
   listTransactions(filters: TransactionFilters): Promise<TransactionResponse[]>;
+  // ─── Webhook management ────────────────────────────────────────────
+  createWebHook(request: Webhook): Promise<WebhookResponse>;
+  listWebhook(webhookId: string, accountId: string): Promise<WebhookResponse>;
+  updateWebhook(request: UpdateWebhookRequest): Promise<WebhookResponse>;
+  deleteWebhook(webhookId: string, accountId?: string): Promise<{ deleted: boolean }>;
+  verifyWebhookSignature(request: WebhookVerificationRequest): boolean;
 }

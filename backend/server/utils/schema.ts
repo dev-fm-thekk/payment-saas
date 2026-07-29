@@ -174,3 +174,47 @@ export const ListTransactionsRequestSchema = z.object({
 export type PayRequestType = z.infer<typeof PayRequestSchema>;
 export type RefundRequestType = z.infer<typeof RefundRequestSchema>;
 export type ListTransactionsRequestType = z.infer<typeof ListTransactionsRequestSchema>;
+
+// ─── Webhook Manager API ──────────────────────────────────────────────────────
+
+/** Schema for registering a new webhook with a payment provider. */
+export const CreateWebhookSchema = z.object({
+  serviceId: z.uuid(),
+  url: z.string().url(),
+  events: z.array(z.string().min(1)).min(1, 'At least one event is required'),
+  secret: z.string().optional(),
+  alert_email: z.string().email().optional(),
+  /** Razorpay only: account_id to scope the webhook */
+  accountId: z.string().optional(),
+});
+
+/** Schema for fetching a single webhook by its provider ID. */
+export const GetWebhookSchema = z.object({
+  serviceId: z.uuid(),
+  webhookId: z.string().min(1),
+  /** Razorpay only */
+  accountId: z.string().optional(),
+});
+
+/** Schema for updating an existing webhook. */
+export const UpdateWebhookSchema = z.object({
+  serviceId: z.uuid(),
+  webhookId: z.string().min(1),
+  accountId: z.string().optional(),
+  url: z.string().url().optional(),
+  events: z.array(z.string().min(1)).optional(),
+  secret: z.string().optional(),
+  alert_email: z.string().email().optional(),
+});
+
+/** Schema for deleting a webhook. */
+export const DeleteWebhookSchema = z.object({
+  serviceId: z.uuid(),
+  webhookId: z.string().min(1),
+  accountId: z.string().optional(),
+});
+
+export type CreateWebhookType = z.infer<typeof CreateWebhookSchema>;
+export type GetWebhookType = z.infer<typeof GetWebhookSchema>;
+export type UpdateWebhookType = z.infer<typeof UpdateWebhookSchema>;
+export type DeleteWebhookType = z.infer<typeof DeleteWebhookSchema>;

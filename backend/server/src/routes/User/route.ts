@@ -35,6 +35,24 @@ userRouter.post('/register', async (req, res, next) => {
     }
 });
 
+/** GET /user/me — protected */
+userRouter.get('/me', authenticate, async (req: AuthRequest, res, next) => {
+    try {
+        if (!req.user || !req.user.id) {
+            res.status(401).json({ status: 'failed', error: 'Unauthorized' });
+            return;
+        }
+        const result = await getUserById(req.user.id);
+        if (result.status === 'failed') {
+            res.status(404).json(result);
+            return;
+        }
+        res.status(200).json({ status: result.status, data: result.payload });
+    } catch(err) {
+        next(err);
+    }
+});
+
 /** GET /user/:id — protected */
 userRouter.get('/:id', authenticate, async (req: AuthRequest, res, next) => {
     try {

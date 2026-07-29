@@ -53,13 +53,19 @@ async function resolveAdapter(serviceId: string, companyId: string) {
 
     // credentialsEncrypted stores the raw credentials JSON (apiKey, apiSecret, etc.)
 
-    console.log(typeof config.credentialsEncrypted);
     const typeCredentials = config.credentialsEncrypted as string;
     const credentials = JSON.parse(typeCredentials) 
 
-    let mappedCredentials = {
-        apiKey: credentials["RAZORPAY_KEY_ID"],
-        apiSecret: credentials["RAZORPAY_KEY_SECRET"]
+    let mappedCredentials: any = {};
+    if (config.provider === 'stripe') {
+        mappedCredentials = {
+            apiKey: credentials.secretKey || credentials.apiKey || credentials.STRIPE_SECRET_KEY,
+        };
+    } else if (config.provider === 'razorpay') {
+        mappedCredentials = {
+            apiKey: credentials.keyId || credentials.apiKey || credentials.RAZORPAY_KEY_ID,
+            apiSecret: credentials.keySecret || credentials.apiSecret || credentials.RAZORPAY_KEY_SECRET,
+        };
     }
 
     const providerName =
@@ -76,8 +82,9 @@ async function resolveAdapter(serviceId: string, companyId: string) {
       error: null,
       data: { adapter, provider: config.provider, service: svc[0] },
     };
-  } catch (err) {
+  } catch (err: any) {
     console.error(err);
+    return { error: err.message || String(err), data: null };
   }
 }
 
