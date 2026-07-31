@@ -54,8 +54,9 @@ transactionRouter.get('/list-transactions',authenticate, async (req: ApiKeyReque
 
 transactionRouter.get('/:id/info', async (req: ApiKeyRequest, res, next) => {
     const { id } = req.params;
-    const { companyId , serviceId } = req.query;
-
+    const { companyId , serviceId, fields } = req.query;
+    
+    const attributes: Array<string> = (fields! as string).split(',');
 
     if (!companyId) return res.status(400).send('company id not provided');
     if (!serviceId) return res.status(400).send('service id not provided');
@@ -63,7 +64,8 @@ transactionRouter.get('/:id/info', async (req: ApiKeyRequest, res, next) => {
     const input = {
         companyId: companyId as string,
         serviceId: serviceId as string,
-        transactionId: id?.toString()!
+        transactionId: id?.toString()!,
+        fields: attributes
     }
 
     try {

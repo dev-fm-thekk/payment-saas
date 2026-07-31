@@ -9,9 +9,7 @@ import type {
   ListTransactionsRequestType,
 } from "../../../utils/schema";
 import logger from "../logging/logging.service";
-import z from "zod";
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+import z from "zod"
 
 /**
  * Resolves the active provider config for a given serviceId, validates that the
@@ -87,8 +85,6 @@ async function resolveAdapter(serviceId: string, companyId: string) {
   }
 }
 
-// ─── List Transactions ───────────────────────────────────────────────────────
-
 export async function listTransactions(
   input: ListTransactionsRequestType,
   companyId: string,
@@ -122,22 +118,30 @@ const fetchTransactionSchema = z.object({
   serviceId: z.string(),
   companyId: z.string(),
   transactionId: z.string(),
+  fields: z.any()
 })
 
 type fetchTransactionType = z.infer<typeof fetchTransactionSchema>
 
 export async function fetchTransaction(input: fetchTransactionType) {
   try {
-    const { serviceId, companyId } = input;
+    const { serviceId, companyId, fields } = input;
     const resolved = await resolveAdapter(serviceId, companyId);
 
+    console.log(fields);
     if (resolved!.error || !resolved!.data) {
       return { status: "failed" as const, error: resolved!.error };
     }
     const { adapter } = resolved!.data;
 
     let response = await adapter.getTransaction(input.transactionId)
-    return { status: 'success' as  const, data: response}
+
+    if (!fields) return { status: 'success', data: response };
+    const filtered = Object.fromEntries(
+      Object.entries(response).filter(([key]) => fields.includes(key))
+    );
+
+    return { status: 'success' as  const, data: filtered}
   } catch(err) {
     logger.error(err);
     return {
