@@ -8,7 +8,7 @@ import { ProviderFactory, ProviderName } from "@payment-sdk/core";
 import type {
   ListTransactionsRequestType,
 } from "../../../utils/schema";
-import logger from "../logging/logging.service";
+import logger from "../../services/logging/logging.service";
 import z from "zod"
 
 /**

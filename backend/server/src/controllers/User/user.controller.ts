@@ -1,16 +1,12 @@
-import express from 'express';
-import { authenticate, type AuthRequest } from '../../middlewares/auth.middleware';
+import { type AuthRequest } from '../../middlewares/auth.middleware';
 import {
     CreateUserInputSchema,
     UpdateUserInputSchema,
     validateSchema
 } from '../../../utils/schema';
-import { createUser, getUserById, updateUser, deleteUser } from '../../services/Auth/user.service';
+import { createUser, deleteUser, getUserById, updateUser } from './user.helper';
 
-const userRouter = express.Router();
-
-/** POST /user/register — public */
-userRouter.post('/register', async (req, res, next) => {
+export const createUserController = async (req: any,  res: any,  next: any) => {
     try {
         const { error: zodError, data } = validateSchema(CreateUserInputSchema, req.body);
         if (zodError) {
@@ -33,10 +29,9 @@ userRouter.post('/register', async (req, res, next) => {
     } catch(err) {
         next(err);
     }
-});
+};
 
-/** GET /user/me — protected */
-userRouter.get('/me', authenticate, async (req: AuthRequest, res, next) => {
+export const getUserByIdController = async (req: AuthRequest,  res: any,  next: any) => {
     try {
         if (!req.user || !req.user.id) {
             res.status(401).json({ status: 'failed', error: 'Unauthorized' });
@@ -51,30 +46,9 @@ userRouter.get('/me', authenticate, async (req: AuthRequest, res, next) => {
     } catch(err) {
         next(err);
     }
-});
+};
 
-/** GET /user/:id — protected */
-userRouter.get('/:id', authenticate, async (req: AuthRequest, res, next) => {
-    try {
-        const id = String(req.params.id);
-        if (req.user?.id !== id && req.user?.role !== 'admin') {
-            res.status(403).json({ status: 'failed', error: 'Forbidden' });
-            return;
-        }
-
-        const result = await getUserById(id);
-        if (result.status === 'failed') {
-            res.status(404).json(result);
-            return;
-        }
-        res.status(200).json({ status: result.status, data: result.payload });
-    } catch(err) {
-        next(err);
-    }
-});
-
-/** PATCH /user/:id — protected */
-userRouter.patch('/:id', authenticate, async (req: AuthRequest, res, next) => {
+export const updateUserController = async (req: AuthRequest,  res: any,  next: any) => {
     try {
         const id = String(req.params.id);
         if (req.user?.id !== id && req.user?.role !== 'admin') {
@@ -100,10 +74,9 @@ userRouter.patch('/:id', authenticate, async (req: AuthRequest, res, next) => {
     } catch(err) {
         next(err);
     }
-});
+};
 
-/** DELETE /user/:id — protected (admin or own account) */
-userRouter.delete('/:id', authenticate, async (req: AuthRequest, res, next) => {
+export const deleteUserController = async (req: AuthRequest,  res: any,  next: any) => {
     try {
         const id = String(req.params.id);
         if (req.user?.id !== id && req.user?.role !== 'admin') {
@@ -120,6 +93,4 @@ userRouter.delete('/:id', authenticate, async (req: AuthRequest, res, next) => {
     } catch(err) {
         next(err);
     }
-});
-
-export default userRouter;
+};

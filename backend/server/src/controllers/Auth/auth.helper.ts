@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm"
 import db from "../../../db"
 import { users, refreshTokens } from "../../../db/schema"
-import logger from "../logging/logging.service"
+import logger from "../../services/logging/logging.service";
 import type { ServiceReturnType, UpdateServiceType } from "../../../utils/schema"
 import {
     hashPassword,

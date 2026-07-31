@@ -1,3 +1,4 @@
+import type { Request, Response, NextFunction } from 'express';
 import express from 'express';
 import { authenticate, type AuthRequest } from '../../middlewares/auth.middleware';
 import {
@@ -5,18 +6,10 @@ import {
     UpdateCompanyInputSchema,
     validateSchema
 } from '../../../utils/schema';
-import {
-    createCompany,
-    getCompanyById,
-    getCompaniesByUser,
-    updateCompany,
-    deleteCompany
-} from '../../services/Companies/company.service';
+import { createCompany, deleteCompany, getCompaniesByUser, getCompanyById, updateCompany } from './company.helper';
 
-const companyRouter = express.Router();
 
-/** POST /company — create company for the authenticated user */
-companyRouter.post('/', authenticate, async (req: AuthRequest, res, next) => {
+export const createCompanyController = async (req: AuthRequest,  res: any,  next: any) => {
     try {
         const { error: zodError, data } = validateSchema(CreateCompanyInputSchema, req.body);
         if (zodError) {
@@ -37,20 +30,18 @@ companyRouter.post('/', authenticate, async (req: AuthRequest, res, next) => {
     } catch(err) {
         next(err);
     }
-});
+};
 
-/** GET /company — list all companies for the authenticated user */
-companyRouter.get('/', authenticate, async (req: AuthRequest, res, next) => {
+export const getCompanyByUserController = async (req: AuthRequest,  res: any,  next: any) => {
     try {
         const result = await getCompaniesByUser(req.user!.id);
         res.status(200).json({ status: result.status, data: result.payload });
     } catch(err) {
         next(err);
     }
-});
+};
 
-/** GET /company/:id — get a specific company */
-companyRouter.get('/:id', authenticate, async (req: AuthRequest, res, next) => {
+export const getCompanyByIdController = async (req: AuthRequest,  res: any,  next: any) => {
     try {
         const result = await getCompanyById(String(req.params.id));
         if (result.status === 'failed') {
@@ -61,10 +52,9 @@ companyRouter.get('/:id', authenticate, async (req: AuthRequest, res, next) => {
     } catch(err) {
         next(err);
     }
-});
+};
 
-/** PATCH /company/:id — update a company */
-companyRouter.patch('/:id', authenticate, async (req: AuthRequest, res, next) => {
+export const updateCompanyController = async (req: AuthRequest,  res: any,  next: any) => {
     try {
         const { error: zodError, data } = validateSchema(UpdateCompanyInputSchema, req.body);
         if (zodError) {
@@ -84,10 +74,9 @@ companyRouter.patch('/:id', authenticate, async (req: AuthRequest, res, next) =>
     } catch(err) {
         next(err);
     }
-});
+};
 
-/** DELETE /company/:id — delete a company */
-companyRouter.delete('/:id', authenticate, async (req: AuthRequest, res, next) => {
+export const deleteCompanyController = async (req: AuthRequest,  res: any,  next: any) => {
     try {
         const result = await deleteCompany(String(req.params.id));
         if (result.status === 'failed') {
@@ -98,6 +87,4 @@ companyRouter.delete('/:id', authenticate, async (req: AuthRequest, res, next) =
     } catch(err) {
         next(err);
     }
-});
-
-export default companyRouter;
+};

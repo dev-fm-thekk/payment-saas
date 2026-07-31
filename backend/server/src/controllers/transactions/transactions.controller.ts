@@ -1,33 +1,12 @@
-import express from 'express';
-import { authenticateApiKey } from '../../middlewares/apikey.middleware';
 import type { ApiKeyRequest } from '../../middlewares/apikey.middleware';
-import { authenticate } from "../../middlewares/auth.middleware";
 import {
     ListTransactionsRequestSchema,
     validateSchema,
 } from '../../../utils/schema';
-import { fetchTransaction, listTransactions } from '../../services/transactions/transaction.service';
-import z from 'zod';
+import { fetchTransaction, listTransactions } from './transactions.helper';
 
-const transactionRouter = express.Router();
 
-// All other payment routes are API-key authenticated
-transactionRouter.use(authenticateApiKey);
-
-/**
- * GET /payment/list-transactions
- *
- * Lists transactions for a service from the upstream provider.
- *
- * Query params:
- *   serviceId  - UUID of the service (required)
- *   from?      - ISO date string
- *   to?        - ISO date string
- *   status?    - Filter by status string
- *   limit?     - Max results (default 20, max 100)
- *   cursor?    - Pagination cursor
- */
-transactionRouter.get('/list-transactions',authenticate, async (req: ApiKeyRequest, res, next) => {
+export const listTransactionController = async (req: ApiKeyRequest,  res: any,  next: any) => {
     try {
         const { error: zodError, data } = validateSchema(ListTransactionsRequestSchema, req.query);
         if (zodError) {
@@ -50,9 +29,9 @@ transactionRouter.get('/list-transactions',authenticate, async (req: ApiKeyReque
     } catch (err) {
         next(err);
     }
-});
+};
 
-transactionRouter.get('/:id/info', async (req: ApiKeyRequest, res, next) => {
+export const fetchTransactionController = async (req: ApiKeyRequest,  res: any,  next: any) => {
     const { id } = req.params;
     const { companyId , serviceId, fields } = req.query;
     
@@ -86,6 +65,4 @@ transactionRouter.get('/:id/info', async (req: ApiKeyRequest, res, next) => {
     }  catch(err) {
         next(err);
     }
-})
-
-export default transactionRouter;
+};

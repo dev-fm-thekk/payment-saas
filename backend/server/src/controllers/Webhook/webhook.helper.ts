@@ -8,7 +8,7 @@ import type {
   UpdateWebhookType,
   DeleteWebhookType,
 } from '../../../utils/schema';
-import logger from '../logging/logging.service';
+import logger from '../../services/logging/logging.service';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

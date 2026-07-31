@@ -1,22 +1,12 @@
-import express from 'express';
-import { authenticate } from '../../middlewares/auth.middleware';
+import type { Request, Response, NextFunction } from 'express';
 import {
     CreateCompanyServiceInputSchema,
     UpdateCompanyServiceInputSchema,
     validateSchema
 } from '../../../utils/schema';
-import {
-    createService,
-    getServiceById,
-    getServicesByCompany,
-    updateService,
-    deleteService
-} from '../../services/CompanyServices/company-service.service';
+import { createService, deleteService, getServiceById, getServicesByCompany, updateService } from './company-service.helper';
 
-const companyServiceRouter = express.Router();
-
-/** POST /service — create a new service under a company */
-companyServiceRouter.post('/', authenticate, async (req, res, next) => {
+export const createServiceController = async (req: any,  res: any,  next: any) => {
     try {
         const { error: zodError, data } = validateSchema(CreateCompanyServiceInputSchema, req.body);
         if (zodError) {
@@ -36,20 +26,18 @@ companyServiceRouter.post('/', authenticate, async (req, res, next) => {
     } catch(err) {
         next(err);
     }
-});
+};
 
-/** GET /service/company/:companyId — list all services for a company */
-companyServiceRouter.get('/company/:companyId', authenticate, async (req, res, next) => {
+export const getServicesByCompanyController = async (req: any,  res: any,  next: any) => {
     try {
         const result = await getServicesByCompany(String(req.params.companyId));
         res.status(200).json({ status: result.status, data: result.payload });
     } catch(err) {
         next(err);
     }
-});
+};
 
-/** GET /service/:id — get a specific service */
-companyServiceRouter.get('/:id', authenticate, async (req, res, next) => {
+export const getServiceByIdController = async (req: any,  res: any,  next: any) => {
     try {
         const result = await getServiceById(String(req.params.id));
         if (result.status === 'failed') {
@@ -60,10 +48,9 @@ companyServiceRouter.get('/:id', authenticate, async (req, res, next) => {
     } catch(err) {
         next(err);
     }
-});
+};
 
-/** PATCH /service/:id — update a service */
-companyServiceRouter.patch('/:id', authenticate, async (req, res, next) => {
+export const updateServiceController = async (req: any,  res: any,  next: any) => {
     try {
         const { error: zodError, data } = validateSchema(UpdateCompanyServiceInputSchema, req.body);
         if (zodError) {
@@ -83,10 +70,9 @@ companyServiceRouter.patch('/:id', authenticate, async (req, res, next) => {
     } catch(err) {
         next(err);
     }
-});
+};
 
-/** DELETE /service/:id — delete a service */
-companyServiceRouter.delete('/:id', authenticate, async (req, res, next) => {
+export const deleteServiceController = async (req: any,  res: any,  next: any) => {
     try {
         const result = await deleteService(String(req.params.id));
         if (result.status === 'failed') {
@@ -97,6 +83,4 @@ companyServiceRouter.delete('/:id', authenticate, async (req, res, next) => {
     } catch(err) {
         next(err);
     }
-});
-
-export default companyServiceRouter;
+};

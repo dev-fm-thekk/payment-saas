@@ -1,5 +1,5 @@
-import { Router } from 'express';
-import { login, logout, refreshToken } from '../../services/Auth/auth.service';
+import type { Request, Response, NextFunction } from 'express';
+import { Router  } from 'express';
 import logger from '../../services/logging/logging.service';
 import { authenticate, type AuthRequest } from '../../middlewares/auth.middleware';
 import db from '../../../db';
@@ -7,8 +7,8 @@ import { apiKeys, companies, users } from '../../../db/schema';
 import { eq } from 'drizzle-orm';
 import { APIKeySchema, CreateAPIKeySchema, validateSchema, type APIKeyType } from '../../../utils/schema';
 import { generateRandomToken, hashToken } from '../../../utils/hashing';
+import { login, logout, refreshToken } from './auth.helper';
 
-const router = Router();
 
 const cookieOptions = {
     httpOnly: true,
@@ -36,7 +36,7 @@ function getRefreshToken(req: any): string | undefined {
     return undefined;
 }
 
-router.post('/login', async (req, res, next) => {
+export const loginController = async (req: Request,  res: Response,  next: NextFunction) => {
     try {
         const { email, password } = req.body;
         if (!email || !password) {
@@ -64,9 +64,9 @@ router.post('/login', async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-});
+};
 
-router.post('/logout', async (req, res, next) => {
+export const logoutController = async (req: any,  res: any,  next: any) => {
     try {
         const token = getRefreshToken(req);
         if (!token) {
@@ -89,9 +89,9 @@ router.post('/logout', async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-});
+};
 
-router.post('/refresh', async (req, res, next) => {
+export const refreshTokenController = async (req: any,  res: any,  next: any) => {
     try {
         const token = getRefreshToken(req);
         if (!token) {
@@ -118,10 +118,9 @@ router.post('/refresh', async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-});
+};
 
-
-router.post('/api-key', authenticate, async (req:AuthRequest, res) => {
+export const apiKeyController = async (req:AuthRequest,  res: any) => {
     try {
         const { id, role } = req!.user!;
 
@@ -150,6 +149,4 @@ router.post('/api-key', authenticate, async (req:AuthRequest, res) => {
         console.log(err);
         return res.status(500).send("internal server error")
     }
-})
-
-export default router;
+};

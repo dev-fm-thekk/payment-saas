@@ -2,7 +2,7 @@ import db from "../../../db";
 import { eq } from "drizzle-orm";
 import { providerConfigs } from "../../../db/schema";
 import type { CreateServiceType, UpdateServiceType, CreateProviderConfigInputType, UpdateProviderConfigInputType } from "../../../utils/schema";
-import logger from "../logging/logging.service";
+import logger from "../../services/logging/logging.service";
 
 export async function addProvider(provider: CreateProviderConfigInputType): Promise<CreateServiceType> {
     try {

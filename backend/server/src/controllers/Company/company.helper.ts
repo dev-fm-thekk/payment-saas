@@ -1,7 +1,7 @@
 import db from "../../../db";
 import { eq } from "drizzle-orm";
 import type { CreateServiceType, UpdateServiceType, CreateCompanyInputType, UpdateCompanyInputType } from "../../../utils/schema";
-import logger from "../logging/logging.service";
+import logger from "../../services/logging/logging.service";
 import { companies as CompanyTable } from "../../../db/schema";
 
 export async function createCompany(company: CreateCompanyInputType): Promise<CreateServiceType> {

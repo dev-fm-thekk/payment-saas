@@ -1,3 +1,4 @@
+import type { Request, Response, NextFunction } from 'express';
 import express from 'express';
 import { authenticate } from '../../middlewares/auth.middleware';
 import {
@@ -5,18 +6,9 @@ import {
     UpdateProviderConfigInputSchema,
     validateSchema
 } from '../../../utils/schema';
-import {
-    addProvider,
-    getProviderById,
-    getProvidersByService,
-    updateProvider,
-    deleteProvider
-} from '../../services/Providers/provider.service';
+import { addProvider, deleteProvider, getProviderById, getProvidersByService, updateProvider } from './provider.helper';
 
-const providerRouter = express.Router();
-
-/** POST /provider — add a provider config for a service */
-providerRouter.post('/', authenticate, async (req, res, next) => {
+export const addProviderController = async (req: any,  res: any,  next: any) => {
     try {
         const { error: zodError, data } = validateSchema(CreateProviderConfigInputSchema, req.body);
         if (zodError) {
@@ -38,20 +30,18 @@ providerRouter.post('/', authenticate, async (req, res, next) => {
     } catch(err) {
         next(err);
     }
-});
+};
 
-/** GET /provider/service/:serviceId — list all providers for a service */
-providerRouter.get('/service/:serviceId', authenticate, async (req, res, next) => {
+export const getProviderByServiceController = async (req: any,  res: any,  next: any) => {
     try {
         const result = await getProvidersByService(String(req.params.serviceId));
         res.status(200).json({ status: result.status, data: result.payload });
     } catch(err) {
         next(err);
     }
-});
+};
 
-/** GET /provider/:id — get a specific provider config */
-providerRouter.get('/:id', authenticate, async (req, res, next) => {
+export const getProviderByIdController = async (req: any,  res: any,  next: any) => {
     try {
         const result = await getProviderById(String(req.params.id));
         if (result.status === 'failed') {
@@ -62,10 +52,9 @@ providerRouter.get('/:id', authenticate, async (req, res, next) => {
     } catch(err) {
         next(err);
     }
-});
+};
 
-/** PATCH /provider/:id — update provider credentials */
-providerRouter.patch('/:id', authenticate, async (req, res, next) => {
+export const updateProviderController = async (req: any,  res: any,  next: any) => {
     try {
         const { error: zodError, data } = validateSchema(UpdateProviderConfigInputSchema, req.body);
         if (zodError) {
@@ -85,10 +74,9 @@ providerRouter.patch('/:id', authenticate, async (req, res, next) => {
     } catch(err) {
         next(err);
     }
-});
+};
 
-/** DELETE /provider/:id — remove a provider config */
-providerRouter.delete('/:id', authenticate, async (req, res, next) => {
+export const deleteProviderController = async (req: any,  res: any,  next: any) => {
     try {
         const result = await deleteProvider(String(req.params.id));
         if (result.status === 'failed') {
@@ -99,6 +87,4 @@ providerRouter.delete('/:id', authenticate, async (req, res, next) => {
     } catch(err) {
         next(err);
     }
-});
-
-export default providerRouter;
+};
