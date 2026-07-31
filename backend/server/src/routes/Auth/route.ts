@@ -128,7 +128,7 @@ router.post('/api-key', authenticate, async (req:AuthRequest, res) => {
         console.log(req.user);
         const {data, error} = validateSchema(CreateAPIKeySchema, req.body);
         
-        console.log(data);
+        if (error) return res.status(400).send('companyId not found');
         const token = generateRandomToken();
         data.keyHash = hashToken(token);
 

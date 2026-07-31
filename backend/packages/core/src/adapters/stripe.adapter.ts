@@ -233,7 +233,7 @@ export class StripeAdapter extends BaseAdapter {
       updatedAt: new Date(raw.created * 1000),
     };
   }
-
+  
   protected mapError(error: any): PaymentError {
     const stripeError = error as Stripe.errors.StripeError;
     let code = ErrorCode.PROVIDER_ERROR;
