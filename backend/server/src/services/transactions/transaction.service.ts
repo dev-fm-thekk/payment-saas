@@ -49,18 +49,21 @@ async function resolveAdapter(serviceId: string, companyId: string) {
 
     // credentialsEncrypted stores the raw credentials JSON (apiKey, apiSecret, etc.)
 
-    const typeCredentials = config.credentialsEncrypted as string;
-    const credentials = JSON.parse(typeCredentials) 
-
+    type credential = {
+      apiKey: string,
+      apiSecret: String
+    }
+    const credentials = config.credentialsEncrypted as credential;
+    
     let mappedCredentials: any = {};
     if (config.provider === 'stripe') {
         mappedCredentials = {
-            apiKey: credentials.secretKey || credentials.apiKey || credentials.STRIPE_SECRET_KEY,
+            apiKey: credentials.apiKey
         };
     } else if (config.provider === 'razorpay') {
         mappedCredentials = {
-            apiKey: credentials.keyId || credentials.apiKey || credentials.RAZORPAY_KEY_ID,
-            apiSecret: credentials.keySecret || credentials.apiSecret || credentials.RAZORPAY_KEY_SECRET,
+            apiKey: credentials.apiKey,
+            apiSecret: credentials.apiSecret
         };
     }
 

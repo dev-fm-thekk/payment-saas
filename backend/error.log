@@ -43,3 +43,8 @@
 {"level":"error","message":"[AuthError]: incorrect password","service":"user-service"}
 {"level":"error","message":"[AuthError]: incorrect password","service":"user-service"}
 {"level":"error","message":"[AuthError]: incorrect password","service":"user-service"}
+{"level":"error","message":"[AuthError]: incorrect password","service":"user-service"}
+{"level":"error","message":"[AuthError]: incorrect password","service":"user-service"}
+{"level":"error","message":"[AuthError]: incorrect password","service":"user-service"}
+{"level":"error","message":"[AuthError]: incorrect password","service":"user-service"}
+{"level":"error","service":"user-service"}

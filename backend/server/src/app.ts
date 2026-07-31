@@ -20,7 +20,7 @@ app.use('/user', userRouter);
 app.use('/company', companyRouter);
 app.use('/service', companyServiceRouter);
 app.use('/provider', providerRouter);
-app.use('/payment', TransactionRouter);
+app.use('/transaction', TransactionRouter);
 app.use('/webhook', webhookRouter);
 
 // Generic error handler

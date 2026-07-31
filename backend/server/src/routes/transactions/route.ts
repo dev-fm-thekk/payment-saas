@@ -1,11 +1,12 @@
 import express from 'express';
 import { authenticateApiKey } from '../../middlewares/apikey.middleware';
 import type { ApiKeyRequest } from '../../middlewares/apikey.middleware';
+import { authenticate } from "../../middlewares/auth.middleware";
 import {
     ListTransactionsRequestSchema,
     validateSchema,
 } from '../../../utils/schema';
-import { listTransactions } from '../../services/transactions/transaction.service';
+import { fetchTransaction, listTransactions } from '../../services/transactions/transaction.service';
 import z from 'zod';
 
 const transactionRouter = express.Router();
@@ -26,7 +27,7 @@ transactionRouter.use(authenticateApiKey);
  *   limit?     - Max results (default 20, max 100)
  *   cursor?    - Pagination cursor
  */
-transactionRouter.get('/list-transactions', async (req: ApiKeyRequest, res, next) => {
+transactionRouter.get('/list-transactions',authenticate, async (req: ApiKeyRequest, res, next) => {
     try {
         const { error: zodError, data } = validateSchema(ListTransactionsRequestSchema, req.query);
         if (zodError) {
@@ -52,10 +53,34 @@ transactionRouter.get('/list-transactions', async (req: ApiKeyRequest, res, next
 });
 
 transactionRouter.get('/:id/info', async (req: ApiKeyRequest, res, next) => {
-
     const { id } = req.params;
+    const { companyId , serviceId } = req.query;
+
+
+    if (!companyId) return res.status(400).send('company id not provided');
+    if (!serviceId) return res.status(400).send('service id not provided');
+
+    const input = {
+        companyId: companyId as string,
+        serviceId: serviceId as string,
+        transactionId: id?.toString()!
+    }
+
     try {
-         
+        const { error, data, status} = await fetchTransaction(input);
+        
+        if (status == "failed") {
+            res.status(400).json({
+                data,
+                error,
+                status,
+            })
+        }
+        return res.status(200).json({
+            data,
+            status,
+            error
+        });
     }  catch(err) {
         next(err);
     }
