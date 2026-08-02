@@ -17,25 +17,30 @@ export async function authenticateApiKey(
     res: Response,
     next: NextFunction
 ): Promise<void> {
-    const rawKey = req.headers['x-api-key'];
-    if (!rawKey || typeof rawKey !== 'string') {
-        res.status(401).json({ status: 'failed', error: 'Missing x-api-key header' });
-        return;
+    try {
+        const rawKey = req.headers['x-api-key'];
+        if (!rawKey || typeof rawKey !== 'string') {
+            res.status(401).json({ status: 'failed', error: 'Missing x-api-key header' });
+            return;
+        }
+
+        const keyHash = hashToken(rawKey);
+
+        const result = await db
+            .select({ companyId: apiKeys.companyId })
+            .from(apiKeys)
+            .where(eq(apiKeys.keyHash, keyHash))
+            .limit(1);
+
+        if (!result[0]) {
+            res.status(401).json({ status: 'failed', error: 'Invalid API key' });
+            return;
+        }
+
+        req.companyId = result[0].companyId;
+        next();
+    } catch(err)  {
+        console.error(err);
+        next(err);
     }
-
-    const keyHash = hashToken(rawKey);
-
-    const result = await db
-        .select({ companyId: apiKeys.companyId })
-        .from(apiKeys)
-        .where(eq(apiKeys.keyHash, keyHash))
-        .limit(1);
-
-    if (!result[0]) {
-        res.status(401).json({ status: 'failed', error: 'Invalid API key' });
-        return;
-    }
-
-    req.companyId = result[0].companyId;
-    next();
 }

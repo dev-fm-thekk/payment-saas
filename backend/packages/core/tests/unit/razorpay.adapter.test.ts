@@ -33,7 +33,7 @@ describe('RazorpayAdapter', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     adapter = new RazorpayAdapter({ apiKey: 'test_key', apiSecret: 'test_secret' });
-    mockRazorpay = vi.mocked(Razorpay).mock.results[0].value;
+    mockRazorpay = vi.mocked(Razorpay).mock.results[0]!.value;
   });
 
   describe('createOrder', () => {

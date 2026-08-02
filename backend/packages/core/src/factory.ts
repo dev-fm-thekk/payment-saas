@@ -1,5 +1,5 @@
-import { ClientConfig } from './types/config';
-import { IPaymentProvider } from './provider';
+import type { ClientConfig } from './types/config';
+import type { IPaymentProvider } from './provider';
 import { ProviderName } from './types/enums';
 import { RazorpayAdapter } from './adapters/razorpay.adapter';
 import { StripeAdapter } from './adapters/stripe.adapter';

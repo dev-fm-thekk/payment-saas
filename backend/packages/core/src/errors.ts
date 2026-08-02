@@ -3,7 +3,7 @@ import { ErrorCode, ProviderName } from './types/enums';
 export class PaymentError extends Error {
   constructor(
     public code: ErrorCode,
-    public message: string,
+    override message: string,
     public provider: ProviderName,
     public providerErrorCode?: string,
     public retryable: boolean = false

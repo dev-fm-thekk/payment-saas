@@ -33,7 +33,7 @@ describe('StripeAdapter', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     adapter = new StripeAdapter({ apiKey: 'test_key' });
-    mockStripe = vi.mocked(Stripe).mock.results[0].value;
+    mockStripe = vi.mocked(Stripe).mock.results[0]!.value;
   });
 
   describe('createOrder', () => {
@@ -219,7 +219,7 @@ describe('StripeAdapter', () => {
         starting_after: 'pi_0',
       });
       expect(result).toHaveLength(2);
-      expect(result[0].id).toBe('pi_1');
+      expect(result[0]!.id).toBe('pi_1');
     });
   });
 

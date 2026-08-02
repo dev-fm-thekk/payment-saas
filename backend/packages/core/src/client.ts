@@ -1,8 +1,8 @@
 import type { ClientConfig } from './types/config';
 import type { IPaymentProvider } from './provider';
 import { ProviderFactory } from './factory';
-import type { OrderRequest, PaymentRequest, RefundRequest, AccountRequest, TransactionFilters } from './types/requests';
-import type { OrderResponse, PaymentResponse, RefundResponse, TransactionResponse, AccountResponse } from './types/responses';
+import type { OrderRequest, PaymentRequest, RefundRequest, AccountRequest, TransactionFilters, PaymentLinkRequest } from './types/requests';
+import type { OrderResponse, PaymentResponse, RefundResponse, TransactionResponse, AccountResponse, PaymentLinkResponse } from './types/responses';
 
 /**
  * High-level client that wraps a specific payment provider adapter.
@@ -71,5 +71,13 @@ export class PaymentClient {
    */
   async listTransactions(filters: TransactionFilters): Promise<TransactionResponse[]> {
     return this.provider.listTransactions(filters);
+  }
+
+  /**
+   * Creates a shareable payment link (Razorpay Payment Link / Stripe Payment Link).
+   * For Stripe, items without a `priceId` will have an ad-hoc Price created automatically.
+   */
+  async createPaymentLink(request: PaymentLinkRequest): Promise<PaymentLinkResponse> {
+    return this.provider.createPaymentLink(request);
   }
 }

@@ -29,5 +29,9 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
-  }
+  },
+  "exclude": [
+    "server/refactor.ts",
+    "server/fix_app.py"
+  ]
 }

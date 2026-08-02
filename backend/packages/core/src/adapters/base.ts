@@ -1,8 +1,8 @@
 import type { IPaymentProvider } from '../provider';
 import type { ProviderCredentials } from '../types/config';
 import { ResponseNormaliser } from '../normaliser';
-import type { OrderRequest, PaymentRequest, RefundRequest, AccountRequest, TransactionFilters, Webhook, WebhookVerificationRequest, UpdateWebhookRequest } from '../types/requests';
-import type { OrderResponse, PaymentResponse, RefundResponse, TransactionResponse, AccountResponse, WebhookResponse } from '../types/responses';
+import type { OrderRequest, PaymentRequest, RefundRequest, AccountRequest, TransactionFilters, Webhook, WebhookVerificationRequest, UpdateWebhookRequest, PaymentLinkRequest } from '../types/requests';
+import type { OrderResponse, PaymentResponse, RefundResponse, TransactionResponse, AccountResponse, WebhookResponse, PaymentLinkResponse } from '../types/responses';
 import { PaymentError } from '../errors';
 
 export abstract class BaseAdapter implements IPaymentProvider {
@@ -20,7 +20,10 @@ export abstract class BaseAdapter implements IPaymentProvider {
   abstract createAccount(request: AccountRequest): Promise<AccountResponse>;
   abstract createPlan(request: any): Promise<any>;
   abstract listTransactions(filters: TransactionFilters): Promise<TransactionResponse[]>;
-  
+
+  // ─── Payment links ────────────────────────────────────────────────────────
+  abstract createPaymentLink(request: PaymentLinkRequest): Promise<PaymentLinkResponse>;
+
   // ─── Webhook management ───────────────────────────────────────────────────
   abstract createWebHook(request: Webhook): Promise<WebhookResponse>;
   abstract listWebhook(webhookId: string, accountId: string): Promise<WebhookResponse>;
@@ -31,3 +34,4 @@ export abstract class BaseAdapter implements IPaymentProvider {
 
   protected abstract mapError(error: any): PaymentError;
 }
+

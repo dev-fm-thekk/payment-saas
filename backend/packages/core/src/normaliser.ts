@@ -1,5 +1,5 @@
 import { ProviderName, PaymentStatus, RefundStatus, AccountStatus, OrderStatus } from './types/enums';
-import type { OrderResponse, PaymentResponse, RefundResponse, TransactionResponse, AccountResponse } from './types/responses';
+import type { OrderResponse, PaymentResponse, RefundResponse, TransactionResponse, AccountResponse, PaymentLinkResponse } from './types/responses';
 
 export class ResponseNormaliser {
   normaliseOrder(raw: any, provider: ProviderName): OrderResponse {
@@ -109,6 +109,70 @@ export class ResponseNormaliser {
           };
     }
     throw new Error(`Unsupported provider: ${provider}`);
+  }
+
+  normalisePaymentLink(raw: any, provider: ProviderName): PaymentLinkResponse {
+    switch (provider) {
+      case ProviderName.RAZORPAY:
+        return {
+          id: raw.id,
+          currency: raw.currency,
+          // Razorpay status is a string ('created', 'paid', 'expired', 'cancelled').
+          // Map it to the boolean `status` field: true = link is still usable.
+          status: this.mapRazorpayLinkStatus(raw.status),
+          callback_url: raw.callback_url,
+          callback_method: raw.callback_method,
+          upi_link: raw.upi_link,
+          // Razorpay exposes the short shareable URL on `short_url`
+          url: raw.short_url,
+          // Razorpay amounts are already in the smallest currency unit (paise)
+          amount: raw.amount,
+          amount_paid: raw.amount_paid,
+          created_at: raw.created_at,
+          // Razorpay embeds line items under `line_items` (array of objects)
+          items: Array.isArray(raw.line_items)
+            ? raw.line_items.map((li: any) => ({
+                quantity: li.quantity ?? 1,
+                price: li.unit_amount ?? li.amount,
+              }))
+            : undefined,
+        };
+
+      case ProviderName.STRIPE:
+        return {
+          id: raw.id,
+          currency: raw.currency?.toUpperCase(),
+          // Stripe exposes a boolean `active` field directly on the PaymentLink object
+          status: raw.active === true,
+          callback_url: raw.after_completion?.redirect?.url ?? '',
+          // Stripe does not have a UPI-specific link concept
+          upi_link: false,
+          // Stripe's shareable link is on `url`
+          url: raw.url,
+          // Stripe stores the total in the smallest currency unit (cents)
+          amount: raw.amount_total ?? 0,
+          // `amount_paid` is not natively on Stripe's PaymentLink object;
+          // it would require a separate checkout session lookup
+          amount_paid: undefined,
+          created_at: raw.created,
+          // Stripe line items are nested under `line_items.data` when expanded
+          items: Array.isArray(raw.line_items?.data)
+            ? raw.line_items.data.map((li: any) => ({
+                quantity: li.quantity ?? 1,
+                priceId: li.price?.id,
+                price: li.price?.unit_amount,
+              }))
+            : undefined,
+        };
+
+      default:
+        throw new Error(`Unsupported provider: ${provider}`);
+    }
+  }
+
+  private mapRazorpayLinkStatus(status: string): boolean {
+    // Only 'created' links are still active/usable
+    return status === 'created';
   }
 
   private mapRazorpayOrderStatus(status: string): OrderStatus {

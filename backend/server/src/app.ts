@@ -1,12 +1,15 @@
 import express from 'express';
 import path from 'path';
-import authRouter from './routes/Auth/route';
-import userRouter from './routes/User/route';
-import companyRouter from './routes/Company/route';
-import companyServiceRouter from './routes/CompanyService/route';
-import providerRouter from './routes/Provider/route';
-import TransactionRouter from './routes/transactions/route';
-import webhookRouter from './routes/Webhook/route';
+import authRouter from './routes/auth.route';
+import userRouter from './routes/user.route';
+import companyRouter from './routes/company.route';
+import companyServiceRouter from './routes/company-service.route';
+import providerRouter from './routes/provider.route';
+import TransactionRouter from './routes/transactions.route';
+import webhookRouter from './routes/webhook.route';
+import InvoiceRouter from './routes/invoice.route';
+import ClientRouter from './routes/client.route';
+
 import cors from 'cors';
 
 const app = express();
@@ -22,6 +25,8 @@ app.use('/service', companyServiceRouter);
 app.use('/provider', providerRouter);
 app.use('/transaction', TransactionRouter);
 app.use('/webhook', webhookRouter);
+app.use('/invoice', InvoiceRouter);
+app.use('/client', ClientRouter);
 
 // Generic error handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
