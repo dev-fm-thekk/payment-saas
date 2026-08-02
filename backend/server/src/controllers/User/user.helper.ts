@@ -1,7 +1,7 @@
 import db from "../../../db";
 import { eq } from "drizzle-orm";
 import type { CreateServiceType, UpdateServiceType, CreateUserInputType, UpdateUserInputType } from "../../../utils/schema";
-import logger from "../logging/logging.service";
+import logger from "../../services/logging/logging.service";
 import { users as UserTable } from "../../../db/schema";
 import { hashPassword } from "../../../utils/hashing";
 

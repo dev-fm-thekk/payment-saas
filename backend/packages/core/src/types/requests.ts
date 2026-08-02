@@ -69,3 +69,28 @@ export interface UpdateWebhookRequest {
   secret?: string;
   alert_email?: string;
 }
+
+export interface Item {
+  quantity: number,
+  priceId?: string,
+  price?: number,
+}
+
+export interface Customer {
+  name: string,
+  email: string,
+  contact: string,
+}
+
+export interface PaymentLinkRequest {
+  id?: string;
+  item: Item[];
+  currency: string;
+  status?: boolean;
+  callback_url: string;
+  callback_method?: string;
+  upi_link?: boolean;
+  description?: string;
+  metadata?: Record<string, string>;
+  customer?: Customer;
+}

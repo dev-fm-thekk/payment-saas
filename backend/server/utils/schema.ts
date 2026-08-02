@@ -31,7 +31,6 @@ export const CompanySchema = z.object({
 
 export const CreateCompanyInputSchema = z.object({
   name: z.string().min(1),
-  userId: z.uuid(),
 })
 
 export const UpdateCompanyInputSchema = z.object({
@@ -81,7 +80,8 @@ export const status = z.enum(['success', 'failed', 'pending'])
 export const CreateServiceSchema = z.object({
   service: z.string(),
   status: status,
-  error: z.string().optional()
+  error: z.string().optional(),
+  payload: z.any().optional(),
 })
 
 export const UpdateServiceSchema = z.object({

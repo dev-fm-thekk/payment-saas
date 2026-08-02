@@ -10,6 +10,7 @@ import type {
   Webhook,
   WebhookVerificationRequest,
   UpdateWebhookRequest,
+  PaymentLinkRequest,
 } from '../types/requests';
 import type {
   OrderResponse,
@@ -18,6 +19,7 @@ import type {
   TransactionResponse,
   AccountResponse,
   WebhookResponse,
+  PaymentLinkResponse,
 } from '../types/responses';
 import { PaymentError } from '../errors';
 
@@ -130,6 +132,54 @@ export class StripeAdapter extends BaseAdapter {
         starting_after: filters.cursor,
       });
       return paymentIntents.data.map((p: any) => this.normaliser.normaliseTransaction(p, ProviderName.STRIPE));
+    } catch (error) {
+      throw this.mapError(error);
+    }
+  }
+
+  // ─── Payment links ────────────────────────────────────────────────────────
+
+  /**
+   * Creates a Stripe Payment Link.
+   * Each item in the request must either supply a `priceId` (existing Stripe Price)
+   * or a `price` (unit amount in cents), which will create an inline price object.
+   *
+   * Stripe docs: https://stripe.com/docs/api/payment_links/create
+   */
+  async createPaymentLink(request: PaymentLinkRequest): Promise<PaymentLinkResponse> {
+    try {
+      // Build the line_items array Stripe expects.
+      // Stripe requires each item to reference a Price ID.
+      // If the caller only provides a unit amount, we create an ad-hoc Price first.
+      const lineItems: Stripe.PaymentLinkCreateParams.LineItem[] = await Promise.all(
+        request.item.map(async (item) => {
+          if (item.priceId) {
+            // Re-use an existing Stripe Price
+            return { price: item.priceId, quantity: item.quantity };
+          }
+
+          // Create a one-off inline price for this item
+          const price = await this.client.prices.create({
+            unit_amount: item.price ?? 0,
+            currency: request.currency.toLowerCase(),
+            product_data: { name: 'Item' },
+          });
+          return { price: price.id, quantity: item.quantity };
+        }),
+      );
+
+      const raw = await this.client.paymentLinks.create({
+        line_items: lineItems,
+        after_completion: request.callback_url
+          ? {
+              type: 'redirect',
+              redirect: { url: request.callback_url },
+            }
+          : { type: 'hosted_confirmation' },
+        metadata: request.metadata,
+      });
+
+      return this.normaliser.normalisePaymentLink(raw, ProviderName.STRIPE);
     } catch (error) {
       throw this.mapError(error);
     }

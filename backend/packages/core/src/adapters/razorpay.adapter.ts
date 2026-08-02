@@ -11,6 +11,7 @@ import type {
   Webhook,
   WebhookVerificationRequest,
   UpdateWebhookRequest,
+  PaymentLinkRequest,
 } from '../types/requests';
 import type {
   OrderResponse,
@@ -19,6 +20,7 @@ import type {
   TransactionResponse,
   AccountResponse,
   WebhookResponse,
+  PaymentLinkResponse,
 } from '../types/responses';
 import { PaymentError } from '../errors';
 import type { Plans } from 'razorpay/dist/types/plans';
@@ -128,6 +130,44 @@ export class RazorpayAdapter extends BaseAdapter {
         count: filters.limit,
       });
       return payments.items.map((p: any) => this.normaliser.normaliseTransaction(p, ProviderName.RAZORPAY));
+    } catch (error) {
+      throw this.mapError(error);
+    }
+  }
+
+  // ─── Payment links ────────────────────────────────────────────────────────
+
+  /**
+   * Creates a Razorpay Payment Link.
+   * Razorpay Payment Links are shareable URLs that accept payment from customers.
+   * Uses `razorpay.paymentLink.create` under the hood.
+   *
+   * Razorpay docs: https://razorpay.com/docs/api/payment-links/
+   */
+  async createPaymentLink(request: PaymentLinkRequest): Promise<PaymentLinkResponse> {
+    try {
+      // Razorpay expects amount in paise (smallest currency unit)
+      const totalAmount = request.item.reduce((sum, i) => {
+        return sum + (i.price ?? 0) * i.quantity;
+      }, 0);
+
+      const raw = await this.client.paymentLink.create({
+        amount: totalAmount,
+        currency: request.currency,
+        description: request.description,
+        callback_url: request.callback_url,
+        callback_method: request.callback_method ?? 'get',
+        upi_link: request.upi_link ?? false,
+        notes: request.metadata,
+        customer: request.customer!,
+        notify: {
+          email: false,
+          sms: false,
+          whatsapp: false
+        }
+      });
+
+      return this.normaliser.normalisePaymentLink(raw, ProviderName.RAZORPAY);
     } catch (error) {
       throw this.mapError(error);
     }
@@ -258,6 +298,7 @@ export class RazorpayAdapter extends BaseAdapter {
       return false;
     }
   }
+
 
   // ─── Helpers ─────────────────────────────────────────────────────────────────
 

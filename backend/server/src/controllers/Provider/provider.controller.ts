@@ -8,7 +8,7 @@ import {
 } from '../../../utils/schema';
 import { addProvider, deleteProvider, getProviderById, getProvidersByService, updateProvider } from './provider.helper';
 
-export const addProviderController = async (req: any,  res: any,  next: any) => {
+export const addProviderController = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { error: zodError, data } = validateSchema(CreateProviderConfigInputSchema, req.body);
         if (zodError) {
@@ -32,7 +32,7 @@ export const addProviderController = async (req: any,  res: any,  next: any) => 
     }
 };
 
-export const getProviderByServiceController = async (req: any,  res: any,  next: any) => {
+export const getProviderByServiceController = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const result = await getProvidersByService(String(req.params.serviceId));
         res.status(200).json({ status: result.status, data: result.payload });
@@ -41,7 +41,7 @@ export const getProviderByServiceController = async (req: any,  res: any,  next:
     }
 };
 
-export const getProviderByIdController = async (req: any,  res: any,  next: any) => {
+export const getProviderByIdController = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const result = await getProviderById(String(req.params.id));
         if (result.status === 'failed') {
@@ -54,7 +54,7 @@ export const getProviderByIdController = async (req: any,  res: any,  next: any)
     }
 };
 
-export const updateProviderController = async (req: any,  res: any,  next: any) => {
+export const updateProviderController = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { error: zodError, data } = validateSchema(UpdateProviderConfigInputSchema, req.body);
         if (zodError) {
@@ -76,7 +76,7 @@ export const updateProviderController = async (req: any,  res: any,  next: any) 
     }
 };
 
-export const deleteProviderController = async (req: any,  res: any,  next: any) => {
+export const deleteProviderController = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const result = await deleteProvider(String(req.params.id));
         if (result.status === 'failed') {

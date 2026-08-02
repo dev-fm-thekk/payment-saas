@@ -89,6 +89,6 @@ describe('PaymentClient', () => {
     const res = await client.listTransactions(request);
     expect(mockProvider.listTransactions).toHaveBeenCalledWith(request);
     expect(res).toHaveLength(1);
-    expect(res[0].id).toBe('txn_123');
+    expect(res[0]!.id).toBe('txn_123');
   });
 });

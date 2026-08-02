@@ -16,31 +16,37 @@ export const relations = defineRelations(schema, (r) => ({
 		}),
 		services: r.many.services(),
 	},
-	users: {
-		companies: r.many.companies(),
-		refreshTokens: r.many.refreshTokens(),
-	},
-	orders: {
+	client: {
 		service: r.one.services({
-			from: r.orders.serviceId,
+			from: r.client.serviceId,
 			to: r.services.id
 		}),
-		payments: r.many.payments(),
+		invoices: r.many.invoice(),
 	},
 	services: {
-		orders: r.many.orders(),
+		clients: r.many.client(),
 		providerConfigs: r.many.providerConfigs(),
 		company: r.one.companies({
 			from: r.services.companyId,
 			to: r.companies.id
 		}),
 	},
-	payments: {
-		order: r.one.orders({
-			from: r.payments.orderId,
-			to: r.orders.id
+	users: {
+		companies: r.many.companies(),
+		refreshTokens: r.many.refreshTokens(),
+	},
+	invoice: {
+		client: r.one.client({
+			from: r.invoice.clientId,
+			to: r.client.id
 		}),
-		refunds: r.many.refunds(),
+		paymentLinks: r.many.paymentLink(),
+	},
+	paymentLink: {
+		invoice: r.one.invoice({
+			from: r.paymentLink.invoiceId,
+			to: r.invoice.id
+		}),
 	},
 	providerConfigs: {
 		service: r.one.services({
@@ -52,12 +58,6 @@ export const relations = defineRelations(schema, (r) => ({
 		user: r.one.users({
 			from: r.refreshTokens.userId,
 			to: r.users.id
-		}),
-	},
-	refunds: {
-		payment: r.one.payments({
-			from: r.refunds.paymentId,
-			to: r.payments.id
 		}),
 	},
 }))

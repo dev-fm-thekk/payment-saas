@@ -1,4 +1,5 @@
 import { PaymentStatus, RefundStatus, AccountStatus, ProviderName, OrderStatus } from './enums';
+import type { Item } from './requests';
 
 export interface OrderResponse {
   id: string;
@@ -68,4 +69,21 @@ export interface WebhookResponse {
   provider: ProviderName;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface PaymentLinkResponse {
+  id: string,
+  items?: Item[],
+  currency: number,
+  /** true = link is active/usable, matches request's `status` semantics (Stripe: `active`, Razorpay: derived from `status !== 'expired'/'cancelled'`) */
+  status: boolean,
+  callback_url: string,
+  callback_method?: string,
+  upi_link?: boolean,
+
+  // fields that only exist once the link is created (not in the request)
+  url: string,               // Stripe: `url` | Razorpay: `short_url`
+  amount: number,             // item.price * item.quantity
+  amount_paid?: number,        // Razorpay: `amount_paid` | Stripe: not on the link, needs a session lookup
+  created_at?: number,         // Razorpay: `created_at` | Stripe: not on the link object
 }
