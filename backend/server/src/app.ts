@@ -9,11 +9,13 @@ import TransactionRouter from './routes/transactions.route';
 import webhookRouter from './routes/webhook.route';
 import InvoiceRouter from './routes/invoice.route';
 import ClientRouter from './routes/client.route';
+import cookieParser from 'cookie-parser';
 
 import cors from 'cors';
 
 const app = express();
 app.use(cors({ origin: ["http://localhost:3000"], credentials: true }))
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
