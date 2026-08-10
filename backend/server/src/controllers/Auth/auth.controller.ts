@@ -88,7 +88,7 @@ export const logoutController = async (req: any,  res: any,  next: any) => {
 
 export const refreshTokenController = async (req: any,  res: any,  next: any) => {
     try {
-        const token = getRefreshToken(req);
+        const token = req.cookies.refreshToken;
         if (!token) {
             res.status(400).json({ status: 'failed', error: 'Refresh token is required' });
             return;

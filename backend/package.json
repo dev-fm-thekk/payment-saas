@@ -9,13 +9,17 @@
   "devDependencies": {
     "@types/bun": "latest",
     "@types/express": "^5.0.6",
+    "@types/supertest": "^7.2.1",
     "drizzle-kit": "^1.0.0-rc.4",
-    "tsx": "^4.23.0"
+    "supertest": "^7.2.2",
+    "tsx": "^4.23.0",
+    "vitest": "^4.1.10"
   },
   "scripts": {
-    "dev": "bun run --watch server/src/app.ts",
+    "dev": "bun run --watch server/src/server.ts",
     "build": "bun run --cwd packages/core build",
-    "test": "bun run --cwd packages/core test"
+    "test-package": "bun run --cwd packages/core test",
+    "test-server": "vitest server"
   },
   "peerDependencies": {
     "typescript": "^5"

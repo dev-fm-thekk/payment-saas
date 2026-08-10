@@ -44,7 +44,7 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 });
 
 //health check 
-app.get('/', (req, res) => res.send(200).send("Server is running !"))
-app.get('/api/v1/health', (req,res) => res.send("Server api-v1 is running !"))
+app.get('/', (req, res) => res.status(200).send("Server is running !"))
+app.get('/api/v1/health', (req,res) => res.status(200).send("Server api-v1 is running !"))
 
 export default app;
