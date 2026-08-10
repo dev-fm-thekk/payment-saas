@@ -12,21 +12,15 @@ import { login, logout, refreshToken } from './auth.helper';
 
 const cookieOptions = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: false,
     sameSite: 'lax' as const,
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
 };
 
-function getRefreshToken(req: any): string | undefined {
+function getRefreshToken(req: Request): string | undefined {
     // Extract from body, custom header, or manual cookie parse
-    if (req.body?.refreshToken) {
-        return req.body.refreshToken;
-    }
-    const authHeader = req.headers['x-refresh-token'];
-    if (typeof authHeader === 'string') {
-        return authHeader;
-    }
-    const rawCookie = req.headers.cookie;
+    console.log("cookie object: ",req.cookies);
+    const rawCookie = req.cookies.refreshToken;
     if (rawCookie) {
         const match = rawCookie.match(/(?:^|; )refreshToken=([^;]*)/);
         if (match) {
@@ -62,6 +56,7 @@ export const loginController = async (req: Request,  res: Response,  next: NextF
             res.status(401).json({ status: 'failed', error: result.error });
         }
     } catch (err) {
+        console.log(err);
         next(err);
     }
 };

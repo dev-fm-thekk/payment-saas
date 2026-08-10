@@ -96,6 +96,7 @@ export async function login(credential: UserCredential, userAgent?: string, ipAd
             }
         }
     } catch(err) {
+        console.log(err);
         let message = `[AuthError]: ${err instanceof Error ? err.message : 'login failed'}`;
         logger.error(message)
         return {

@@ -52,3 +52,19 @@
 {"level":"error","service":"user-service"}
 {"level":"error","service":"user-service"}
 {"level":"error","message":"[AuthError]: token has been revoked","service":"user-service"}
+{"level":"error","message":"[AuthError]: incorrect password","service":"user-service"}
+{"level":"error","message":"[AuthError]: incorrect password","service":"user-service"}
+{"level":"error","message":"[AuthError]: Failed query: select \"id\" from \"users\" where \"users\".\"email\" = $1\nparams: abhiramajithr@gmail.com","service":"user-service"}
+{"level":"error","message":"[AuthError]: Failed query: select \"id\" from \"users\" where \"users\".\"email\" = $1\nparams: abhiramajithr@gmail.com","service":"user-service"}
+{"level":"error","message":"[AuthError]: Failed query: select \"id\" from \"users\" where \"users\".\"email\" = $1\nparams: abhiramajithr@gmail.com","service":"user-service"}
+{"level":"error","message":"[AuthError]: Failed query: select \"id\" from \"users\" where \"users\".\"email\" = $1\nparams: abhiramajithr@gmail.com","service":"user-service"}
+{"level":"error","message":"[AuthError]: Failed query: select \"id\" from \"users\" where \"users\".\"email\" = $1\nparams: abhiramajithr@gmail.com","service":"user-service"}
+{"level":"error","message":"[AuthError]: Failed query: select \"id\" from \"users\" where \"users\".\"email\" = $1\nparams: abhiramajithr@gmail.com","service":"user-service"}
+{"level":"error","message":"[AuthError]: Failed query: select \"id\" from \"users\" where \"users\".\"email\" = $1\nparams: abhiramajithr@gmail.com","service":"user-service"}
+{"level":"error","message":"[AuthError]: Failed query: select \"id\" from \"users\" where \"users\".\"email\" = $1\nparams: abhiramajithr@gmail.com","service":"user-service"}
+{"level":"error","message":"[AuthError]: Failed query: select \"id\" from \"users\" where \"users\".\"email\" = $1\nparams: abhiramajithr@gmail.com","service":"user-service"}
+{"level":"error","message":"[AuthError]: incorrect password","service":"user-service"}
+{"level":"error","message":"[AuthError]: Failed query: select \"id\" from \"users\" where \"users\".\"email\" = $1\nparams: abhiramajithr@gmail.com","service":"user-service"}
+{"level":"error","message":"[AuthError]: incorrect password","service":"user-service"}
+{"cause":{"stack":"Error: Connection terminated unexpectedly\n    at <anonymous> (/home/abhiram-a-r/Documents/projects/payment-sdk/backend/node_modules/.bun/pg-pool@3.14.0+51226add061828f6/node_modules/pg-pool/index.js:45:11)\n    at processTicksAndRejections (native:7:39)"},"level":"error","name":"DrizzleQueryError","params":["4b4afd07-3c2c-46e8-89ef-cdb4ec75267c"],"query":"select \"id\", \"company_id\", \"name\", \"currency\", \"created_at\" from \"services\" where \"services\".\"company_id\" = $1","service":"user-service","stack":"DrizzleQueryError: Failed query: select \"id\", \"company_id\", \"name\", \"currency\", \"created_at\" from \"services\" where \"services\".\"company_id\" = $1\nparams: 4b4afd07-3c2c-46e8-89ef-cdb4ec75267c\n    at <anonymous> (/home/abhiram-a-r/Documents/projects/payment-sdk/backend/node_modules/.bun/drizzle-orm@1.0.0-rc.4+97849540cc32a46c/node_modules/drizzle-orm/pg-core/async/session.js:41:15)\n    at processTicksAndRejections (native:7:39)"}
+{"level":"error","message":"[AuthError]: incorrect password","service":"user-service"}
