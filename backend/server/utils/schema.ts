@@ -163,6 +163,7 @@ export const RefundRequestSchema = z.object({
 });
 
 export const ListTransactionsRequestSchema = z.object({
+  serviceId: z.string().optional(),
   from: z.coerce.date().optional(),
   to: z.coerce.date().optional(),
   status: z.string().optional(),

@@ -10,7 +10,7 @@ export async function listTransactions(
   companyId: string,
 ) {
   try {
-    const resolved = await resolveAdapter(input.serviceId, companyId);
+    const resolved = await resolveAdapter(input.serviceId!, companyId);
     if (resolved!.error || !resolved!.data) {
       return { status: "failed" as const, error: resolved!.error };
     }
