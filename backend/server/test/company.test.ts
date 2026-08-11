@@ -59,7 +59,7 @@ describe("CRUD API testing for company", () => {
     await agent.post("/api1/v1/auth/logout");
     // del user
     await agent
-      .post(`/api/v1/user/${userId}`)
+      .delete(`/api/v1/user/${userId}`)
       .set("Authorization", `Bearer ${accessToken}`);
   });
 
