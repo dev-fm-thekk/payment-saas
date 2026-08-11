@@ -14,21 +14,28 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 
 const app = express();
-app.use(cors({ origin: ["http://localhost:3000"], credentials: true }))
+
+// some default middlewars
+app.use(cors({ origin: ["http://localhost:3001"], credentials: true }))
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/auth', authRouter);
-app.use('/user', userRouter);
-app.use('/company', companyRouter);
-app.use('/service', companyServiceRouter);
-app.use('/provider', providerRouter);
-app.use('/transaction', TransactionRouter);
-app.use('/webhook', webhookRouter);
-app.use('/invoice', InvoiceRouter);
-app.use('/client', ClientRouter);
+// v1 routes
+const appV1 = express.Router();
+appV1.use('/auth', authRouter);
+appV1.use('/user', userRouter);
+appV1.use('/company', companyRouter);
+appV1.use('/service', companyServiceRouter);
+appV1.use('/provider', providerRouter);
+appV1.use('/transaction', TransactionRouter);
+appV1.use('/webhook', webhookRouter);
+appV1.use('/invoice', InvoiceRouter);
+appV1.use('/client', ClientRouter);
+
+
+app.use('/api/v1', appV1);
 
 // Generic error handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
@@ -36,6 +43,8 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
     res.status(500).json({ status: 'failed', error: errMsg });
 });
 
-app.get('/', (_req, res) => res.send('hi welcome to payment gateway'));
+//health check 
+app.get('/', (req, res) => res.status(200).send("Server is running !"))
+app.get('/api/v1/health', (req,res) => res.status(200).send("Server api-v1 is running !"))
 
-app.listen(3001, () => console.log('Server running on port 3001'));
+export default app;

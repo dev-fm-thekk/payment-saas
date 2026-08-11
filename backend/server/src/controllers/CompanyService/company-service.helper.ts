@@ -6,8 +6,8 @@ import { services as ServicesTable } from "../../../db/schema";
 
 export async function createService(service: CreateCompanyServiceInputType): Promise<CreateServiceType> {
     try {
-        await db.insert(ServicesTable).values(service);
-        return { service: 'company-services', status: 'success' };
+        let res = await db.insert(ServicesTable).values(service).returning();
+        return { service: 'company-services', status: 'success', payload: res };
     } catch(err) {
         let message = `ServiceError: Unable to create service.\n${err}`
         logger.error(message)

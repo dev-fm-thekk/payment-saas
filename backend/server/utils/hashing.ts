@@ -16,7 +16,7 @@ export const verifyPassword = async (primary: string, secondary: string) => {
 
 export const generateAccessToken = (payload: AccessPayloadType): string => {
     const accessToken = jwt.sign(payload, vars.ACCESS_TOKEN_SECRET!, {
-        expiresIn: "15min"
+        expiresIn: "2d"
     })
     return accessToken;
 }
