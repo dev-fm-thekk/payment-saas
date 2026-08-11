@@ -7,6 +7,9 @@ import { fetchTransaction, listTransactions } from './transactions.helper';
 
 
 export const listTransactionController = async (req: ApiKeyRequest,  res: any,  next: any) => {
+    const serviceId: string = req.params.serviceId as string;
+    const companyId: string = req.params.companyId as string;
+
     try {
         const { error: zodError, data } = validateSchema(ListTransactionsRequestSchema, req.query);
         if (zodError) {
@@ -19,7 +22,9 @@ export const listTransactionController = async (req: ApiKeyRequest,  res: any,  
             return;
         }
 
-        const result = await listTransactions(data, req.companyId!);
+        data.serviceId = serviceId;
+
+        const result = await listTransactions(data, companyId);
         if (result.status === 'failed') {
             res.status(400).json(result);
             return;
@@ -32,19 +37,17 @@ export const listTransactionController = async (req: ApiKeyRequest,  res: any,  
 };
 
 export const fetchTransactionController = async (req: ApiKeyRequest,  res: any,  next: any) => {
-    const { id } = req.params;
-    const { companyId , serviceId, fields } = req.query;
-    
-    const attributes: Array<string> = (fields! as string).split(',');
+    const companyId: string = req.params.companyId as string;
+    const serviceId: string = req.params.serviceIs as string;
+    const transactionId: string = req.params.id as string;
 
-    if (!companyId) return res.status(400).send('company id not provided');
-    if (!serviceId) return res.status(400).send('service id not provided');
+    const fields = req.query.fields;
 
     const input = {
         companyId: companyId as string,
         serviceId: serviceId as string,
-        transactionId: id?.toString()!,
-        fields: attributes
+        transactionId,
+        fields
     }
 
     try {

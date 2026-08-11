@@ -10,3 +10,4 @@ router.patch('/:id', authenticate, Controller.updateUserController);
 router.delete('/:id', authenticate, Controller.deleteUserController);
 
 export default router;
+ 

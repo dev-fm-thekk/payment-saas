@@ -1,11 +1,10 @@
 import type { Request, Response, NextFunction } from 'express';
-import { Router  } from 'express';
 import logger from '../../services/logging/logging.service';
-import { authenticate, type AuthRequest } from '../../middlewares/auth.middleware';
+import { type AuthRequest } from '../../middlewares/auth.middleware';
 import db from '../../../db';
-import { apiKeys, companies, users } from '../../../db/schema';
+import { apiKeys, companies } from '../../../db/schema';
 import { eq } from 'drizzle-orm';
-import { APIKeySchema, CreateAPIKeySchema, validateSchema, type APIKeyType } from '../../../utils/schema';
+import { CreateAPIKeySchema, validateSchema } from '../../../utils/schema';
 import { generateRandomToken, hashToken } from '../../../utils/hashing';
 import { login, logout, refreshToken } from './auth.helper';
 
@@ -16,19 +15,6 @@ const cookieOptions = {
     sameSite: 'lax' as const,
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
 };
-
-function getRefreshToken(req: Request): string | undefined {
-    // Extract from body, custom header, or manual cookie parse
-    console.log("cookie object: ",req.cookies);
-    const rawCookie = req.cookies.refreshToken;
-    if (rawCookie) {
-        const match = rawCookie.match(/(?:^|; )refreshToken=([^;]*)/);
-        if (match) {
-            return decodeURIComponent(match[1]);
-        }
-    }
-    return undefined;
-}
 
 export const loginController = async (req: Request,  res: Response,  next: NextFunction) => {
     try {
@@ -63,7 +49,7 @@ export const loginController = async (req: Request,  res: Response,  next: NextF
 
 export const logoutController = async (req: any,  res: any,  next: any) => {
     try {
-        const token = getRefreshToken(req);
+        const token = req.cookies.refreshToken;
         if (!token) {
             res.status(400).json({ status: 'failed', error: 'Refresh token is required' });
             return;
