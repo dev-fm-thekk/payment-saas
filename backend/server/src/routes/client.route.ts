@@ -4,7 +4,6 @@ import { authenticate } from '../middlewares/auth.middleware';
 import { createClient, getClient, listClients, updateClient, deleteClient } from '../controllers/Client/client.controller';
 
 const router = Router();
-router.use(authenticateApiKey);
 
 /*
  * POST /

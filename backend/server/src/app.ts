@@ -16,7 +16,7 @@ import cors from 'cors';
 const app = express();
 
 // some default middlewars
-app.use(cors({ origin: ["http://localhost:3001"], credentials: true }))
+app.use(cors({ origin: ["http://localhost:3000"], credentials: true }))
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
