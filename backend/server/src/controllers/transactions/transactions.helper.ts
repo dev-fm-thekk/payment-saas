@@ -47,8 +47,7 @@ export async function fetchTransaction(input: fetchTransactionType) {
   try {
     const { serviceId, companyId, fields } = input;
     const resolved = await resolveAdapter(serviceId, companyId);
-
-    console.log(fields);
+    
     if (resolved!.error || !resolved!.data) {
       return { status: "failed" as const, error: resolved!.error };
     }
