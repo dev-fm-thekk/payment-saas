@@ -4,7 +4,7 @@ import vars from './configs/config';
 
 export default defineConfig({
   out: './drizzle',
-  schema: './server/db/schema.ts',
+  schema: './db/schema.ts',
   dialect: 'postgresql',
   dbCredentials: {
     url: vars.DATABASE_URL!,
