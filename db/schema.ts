@@ -1,0 +1,158 @@
+import { pgTable, uuid, text, timestamp, jsonb, boolean, integer, index, uniqueIndex, foreignKey, primaryKey, unique, check } from "drizzle-orm/pg-core"
+import { sql } from "drizzle-orm"
+
+export const apiKeys = pgTable("api_keys", {
+	id: uuid().defaultRandom().primaryKey(),
+	companyId: uuid("company_id").notNull().references(() => companies.id, { onDelete: "cascade" } ),
+	keyHash: text("key_hash").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).default(sql`now()`).notNull(),
+}, (table) => [
+	index("idx_api_keys_company_id").using("btree", table.companyId.asc().nullsLast()),
+	unique("api_keys_key_hash_key").on(table.keyHash),
+]);
+
+export const clients = pgTable("clients", {
+	id: uuid().defaultRandom().primaryKey(),
+	name: text().notNull(),
+	email: text(),
+	serviceId: uuid("service_id").references(() => services.id),
+	createdAt: timestamp("created_at").default(sql`now()`),
+	updatedAt: timestamp("updated_at").default(sql`now()`),
+}, (table) => [
+	unique("client_email_key").on(table.email),
+]);
+
+export const companies = pgTable("companies", {
+	id: uuid().defaultRandom().primaryKey(),
+	name: text().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).default(sql`now()`).notNull(),
+	userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" } ),
+});
+
+export const invoices = pgTable("invoices", {
+	id: uuid().defaultRandom().primaryKey(),
+	invoiceNumber: text("invoice_number").notNull(),
+	title: text().notNull(),
+	description: text().notNull(),
+	clientId: uuid("client_id").references(() => clients.id, { onDelete: "restrict" } ),
+	amountMinor: integer("amount_minor").notNull(),
+	currency: text().notNull(),
+	status: text().default("draft").notNull(),
+	paymentLinkId: uuid("payment_link_id"),
+	dueDate: timestamp("due_date"),
+	paidAt: timestamp("paid_at"),
+	createdAt: timestamp("created_at").default(sql`now()`),
+	updatedAt: timestamp("updated_at").default(sql`now()`),
+}, (table) => [
+	index("idx_invoice_client_id").using("btree", table.clientId.asc().nullsLast()),
+	index("idx_invoice_status").using("btree", table.status.asc().nullsLast()),
+	unique("invoice_invoice_number_key").on(table.invoiceNumber),
+	check("invoice_status_check", sql`(status = ANY (ARRAY['draft'::text, 'pending'::text, 'paid'::text, 'failed'::text, 'expired'::text]))`),
+]);
+
+export const paymentLinks = pgTable("payment_links", {
+	id: uuid().defaultRandom().primaryKey(),
+	companyId: uuid("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+	provider: text().notNull(),
+	providerSessionId: text("provider_session_id").unique().notNull(),
+	url: text().notNull(),
+	status: text().default("active").notNull(),
+	expiresAt: timestamp("expires_at"),
+	createdAt: timestamp("created_at").default(sql`now()`),
+}, (table) => [
+	index("idx_payment_links_company_id").using("btree", table.companyId.asc().nullsLast()),
+	check("payment_links_provider_check", sql`(provider = ANY (ARRAY['stripe'::text, 'razorpay'::text]))`),
+	check("payment_links_status_check", sql`(status = ANY (ARRAY['active'::text, 'expired'::text, 'consumed'::text]))`),
+]);
+
+export const transactions = pgTable("transactions", {
+	id: uuid().defaultRandom().primaryKey(),
+	invoiceId: uuid("invoice_id").notNull().references(() => invoices.id, { onDelete: "cascade" }),
+	companyId: uuid("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+	provider: text().notNull(),
+	providerTransactionId: text("provider_transaction_id").unique(),
+	providerSessionId: text("provider_session_id").notNull(),
+	status: text().default("pending").notNull(),
+	amountMinor: integer("amount_minor").notNull(),
+	currency: text().notNull(),
+	rawPayload: jsonb("raw_payload"),
+	createdAt: timestamp("created_at").default(sql`now()`),
+	updatedAt: timestamp("updated_at").default(sql`now()`),
+}, (table) => [
+	index("idx_transactions_company_id").using("btree", table.companyId.asc().nullsLast()),
+	index("idx_transactions_provider_session_id").using("btree", table.providerSessionId.asc().nullsLast()),
+	check("transactions_provider_check", sql`(provider = ANY (ARRAY['stripe'::text, 'razorpay'::text]))`),
+	check("transactions_status_check", sql`(status = ANY (ARRAY['pending'::text, 'success'::text, 'failed'::text, 'incomplete'::text]))`),
+]);
+
+export const providerConfigs = pgTable("provider_configs", {
+	id: uuid().defaultRandom().primaryKey(),
+	serviceId: uuid("service_id").notNull().references(() => services.id, { onDelete: "cascade" } ),
+	provider: text().notNull(),
+	credentialsEncrypted: jsonb("credentials_encrypted").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).default(sql`now()`).notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true }).default(sql`now()`).notNull(),
+}, (table) => [
+	index("idx_provider_configs_service_id").using("btree", table.serviceId.asc().nullsLast()),
+	unique("provider_configs_service_id_provider_key").on(table.serviceId, table.provider),
+	check("provider_configs_provider_check", sql`(provider = ANY (ARRAY['stripe'::text, 'razorpay'::text]))`),
+]);
+
+export const refreshTokens = pgTable("refresh_tokens", {
+	id: uuid().defaultRandom().primaryKey(),
+	userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" } ),
+	tokenHash: text("token_hash").notNull(),
+	expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+	revoked: boolean().default(false).notNull(),
+	userAgent: text("user_agent"),
+	ipAddress: text("ip_address"),
+	createdAt: timestamp("created_at", { withTimezone: true }).default(sql`now()`).notNull(),
+}, (table) => [
+	index("refresh_tokens_token_hash_idx").using("btree", table.tokenHash.asc().nullsLast()),
+	index("refresh_tokens_user_id_idx").using("btree", table.userId.asc().nullsLast()),
+	unique("refresh_tokens_token_hash_key").on(table.tokenHash),
+]);
+
+export const services = pgTable("services", {
+	id: uuid().defaultRandom().primaryKey(),
+	companyId: uuid("company_id").notNull().references(() => companies.id, { onDelete: "cascade" } ),
+	name: text().notNull(),
+	currency: text().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).default(sql`now()`).notNull(),
+}, (table) => [
+	index("idx_services_company_id").using("btree", table.companyId.asc().nullsLast()),
+]);
+
+export const users = pgTable("users", {
+	id: uuid().defaultRandom().primaryKey(),
+	email: text().notNull(),
+	passwordHash: text("password_hash").notNull(),
+	name: text().notNull(),
+	role: text().default("user").notNull(),
+	isVerified: boolean("is_verified").default(false).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).default(sql`now()`).notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true }).default(sql`now()`).notNull(),
+}, (table) => [
+	uniqueIndex("users_email_lower_idx").using("btree", sql`lower(email)`),
+	unique("users_email_key").on(table.email),
+]);
+
+export const webhookEndpoints = pgTable("webhook_endpoints", {
+	id: uuid().defaultRandom().primaryKey(),
+	companyId: uuid("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+	provider: text().notNull(),
+	endpointToken: text("endpoint_token").unique().notNull(),
+	signingSecret: text("signing_secret").notNull(),
+	createdAt: timestamp("created_at").default(sql`now()`),
+}, (table) => [
+	check("webhook_endpoints_provider_check", sql`(provider = ANY (ARRAY['stripe'::text, 'razorpay'::text]))`),
+]);
+
+export const webhookEvents = pgTable("webhook_events", {
+	id: uuid().defaultRandom().primaryKey(),
+	webhookEndpointId: uuid("webhook_endpoint_id").notNull().references(() => webhookEndpoints.id, { onDelete: "cascade" }),
+	providerEventId: text("provider_event_id").unique().notNull(),
+	payload: jsonb().notNull(),
+	processedAt: timestamp("processed_at"),
+	receivedAt: timestamp("received_at").default(sql`now()`),
+});
