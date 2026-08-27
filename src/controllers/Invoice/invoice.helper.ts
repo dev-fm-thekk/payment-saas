@@ -1,39 +1,59 @@
+import crypto from "crypto";
 import db from "../../../db";
-import { invoices, paymentLinks } from "../../../db/schema";
-import type { CreateServiceType } from "../../../utils/schema";
-import logger from "../../services/logging/logging.service";
+import { clients, companies, invoices } from "../../../db/schema";
+import { eq } from "drizzle-orm";
 
-export async function createInvoiceRecord(data: any): Promise<CreateServiceType & { payload?: any }> {
-    try {
-        const result = await db.transaction(async (tx) => {
-            const [newPaymentLink] = await tx.insert(paymentLinks).values({
-                companyId: data.companyId,
-                provider: data.providerName,
-                providerSessionId: data.providerRef,
-                url: data.paymentLinkUrl,
-                status: 'active'
-            }).returning();
+type Invoice = {
+  id: string;
+  invoiceNumber: string;
+  title: string;
+  description: string;
+  clientId: string;
+  amount: number;
+  currency: string;
+  status: string;
+  paymentLinkId: string;
+  dueDate: string;
+  updatedAt: string;
+  createdAt: string;
+};
 
-            const [newInvoice] = await tx.insert(invoices).values({
-                invoiceNumber: data.invoiceNumber,
-                title: data.title,
-                description: data.description,
-                clientId: data.clientId,
-                amountMinor: data.amountMinor,
-                currency: data.currency,
-                dueDate: data.dueDate,
-                status: "pending",
-                paymentLinkId: newPaymentLink!.id
-            }).returning();
+type CreateInvoice = Omit<
+  Invoice,
+  "id" | "invoiceNumber" | "updatedAt" | "createdAt"
+>;
 
-            
+function generateInvoiceNumber(prefix: string) {
+  const random = crypto.randomBytes(3).toString("hex").toUpperCase();
 
-            return { invoice: newInvoice, paymentLink: newPaymentLink };
-        });
+  let invNumber = `${prefix}-${random}`;
 
-        return { service: 'invoice-service', status: 'success', payload: result };
-    } catch(err) {
-        logger.error(err);
-        return { service: 'invoice-service', status: 'failed', error: err instanceof Error ? err.message : String(err) };
-    }
+  return invNumber;
 }
+
+export const createInvoice = async (input: CreateInvoice) => {
+  let client = await db
+    .select({ name: clients.name })
+    .from(clients)
+    .where(eq(clients.id, input.clientId))
+    .limit(1);
+
+  if (client.length < 0) return "CLIENT_NOT_FOUND";
+
+  let clientName = client[0]?.name as string;
+
+  let invoiceNumber = generateInvoiceNumber(clientName);
+
+  let insertData = {
+    ...input,
+    invoiceNumber,
+    dueDate: new Date(input.dueDate),
+  };
+
+  let response = await db.insert(invoices).values(insertData).returning();
+
+  if (!response || response.length < 1)
+    throw new Error("DB Error: Failed inserting row to invoice table");
+
+  return response;
+};

@@ -1,246 +1,61 @@
+import crypto from 'crypto';
 import db from '../../../db';
-import { eq, and, desc } from 'drizzle-orm';
-import { providerConfigs, services, webhookEvents } from '../../../db/schema';
-import { RazorpayAdapter, StripeAdapter, ProviderName } from '../../../core';
-import type {
-  CreateWebhookType,
-  GetWebhookType,
-  UpdateWebhookType,
-  DeleteWebhookType,
-} from '../../../utils/schema';
-import logger from '../../services/logging/logging.service';
+import { webhookEndpoints, webhookEvents } from '../../../db/schema';
+import { eq } from 'drizzle-orm';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * Resolves the active provider adapter for a given serviceId, validating
- * that the service belongs to the calling company.
- */
-async function resolveAdapter(serviceId: string, companyId: string) {
-  try {
-    const svc = await db
-      .select({ id: services.id })
-      .from(services)
-      .where(and(eq(services.id, serviceId), eq(services.companyId, companyId)))
-      .limit(1);
-
-    if (!svc[0]) {
-      return { error: 'Service not found or does not belong to your company', data: null };
-    }
-
-    const configs = await db
-      .select()
-      .from(providerConfigs)
-      .where(eq(providerConfigs.serviceId, serviceId))
-      .limit(1);
-
-    if (!configs[0]) {
-      return { error: 'No provider configured for this service', data: null };
-    }
-
-    const config = configs[0];
-    const creds = config.credentialsEncrypted as { apiKey: string; apiSecret?: string };
-
-    const providerName =
-      config.provider === 'stripe' ? ProviderName.STRIPE : ProviderName.RAZORPAY;
-
-    const adapter =
-      config.provider === 'razorpay'
-        ? new RazorpayAdapter({ apiKey: creds.apiKey, apiSecret: creds.apiSecret! })
-        : new StripeAdapter({ apiKey: creds.apiKey });
-
-    return { error: null, data: { adapter, provider: config.provider } };
-  } catch (err) {
-    logger.error(err);
-    return { error: 'Failed to resolve provider adapter', data: null };
-  }
+type WebhookEndpoint = {
+    id: string,
+    companyId: string,
+    provider: string,
+    url: string,
+    createdAt: string
 }
 
-// ─── Create Webhook ───────────────────────────────────────────────────────────
+type CreateWebhookEndpoint = Omit<WebhookEndpoint, "id" | "createdAt" | "url">;
 
-export async function createWebhook(input: CreateWebhookType, companyId: string) {
-  try {
-    const resolved = await resolveAdapter(input.serviceId, companyId);
-    if (resolved.error || !resolved.data) {
-      return { status: 'failed' as const, error: resolved.error };
-    }
-    const { adapter } = resolved.data;
+type WebhookEvents = {
+    payload: any,
+    received_at: string,
+    webhookEndpoint: string
+};
 
-    const webhook = await adapter.createWebhook({
-      url: input.url,
-      events: input.events,
-      secret: input.secret,
-      alert_email: input.alert_email,
-      accountId: input.accountId,
-    });
+const BASE_URL = 'http://localhost:3001/api/v1';
 
-    return { status: 'success' as const, data: webhook };
-  } catch (err) {
-    logger.error(err);
-    return {
-      status: 'failed' as const,
-      error: err instanceof Error ? err.message : String(err),
-    };
-  }
+function generateWebhookUrl(provider: string, companyId: string): string {
+    let uniqueSecret = crypto.randomBytes(16).toString('hex');
+    
+    let url = `${BASE_URL}/webhook/${companyId}/${provider}/${uniqueSecret}`;
+
+    return url;
 }
 
-// ─── Get Webhook ─────────────────────────────────────────────────────────────
-
-export async function getWebhook(input: GetWebhookType, companyId: string) {
-  try {
-    const resolved = await resolveAdapter(input.serviceId, companyId);
-    if (resolved.error || !resolved.data) {
-      return { status: 'failed' as const, error: resolved.error };
+export const createWebhook = async (input: CreateWebhookEndpoint) => {
+    let { provider, companyId } = input;
+    let url = generateWebhookUrl(provider, companyId);
+    let insertData = {
+        ...input,
+        url,
     }
-    const { adapter } = resolved.data;
-
-    const webhook = await adapter.fetchWebhook(input.webhookId, input.accountId);
-
-    return { status: 'success' as const, data: webhook };
-  } catch (err) {
-    logger.error(err);
-    return {
-      status: 'failed' as const,
-      error: err instanceof Error ? err.message : String(err),
-    };
-  }
+    let response = await db.insert(webhookEndpoints).values(insertData).returning();
+    if (response.length < 1) throw new Error("DB Error: unable to insert values in webhook_endpoints table");
+    return response;
 }
 
-// ─── Update Webhook ───────────────────────────────────────────────────────────
+export const handleWebhook = async (input: WebhookEvents) => {
 
-export async function updateWebhook(input: UpdateWebhookType, companyId: string) {
-  try {
-    const resolved = await resolveAdapter(input.serviceId, companyId);
-    if (resolved.error || !resolved.data) {
-      return { status: 'failed' as const, error: resolved.error };
+    let webhookEndpoint = await db.select({ id: webhookEndpoints.id }).from(webhookEndpoints).where(eq(webhookEndpoints.url, input.webhookEndpoint)).limit(1);
+
+    if (webhookEndpoint.length < 1) return 'WEBHOOK_ENDPOINT_NOT_FOUND';
+
+    let webhookEndpointId = webhookEndpoint[0]?.id as string;
+
+    let insertData = {
+        payload: input.payload,
+        received_at: input.received_at,
+        webhookEndpointId: webhookEndpointId,
     }
-    const { adapter } = resolved.data;
+    let response = await db.insert(webhookEvents).values(insertData).returning();
+    if (response.length < 1) throw new Error("DB Error: unable to insert value in webhook_events table");
 
-    const webhook = await adapter.updateWebhook({
-      webhookId: input.webhookId,
-      accountId: input.accountId,
-      url: input.url,
-      events: input.events,
-      secret: input.secret,
-      alert_email: input.alert_email,
-    });
-
-    return { status: 'success' as const, data: webhook };
-  } catch (err) {
-    logger.error(err);
-    return {
-      status: 'failed' as const,
-      error: err instanceof Error ? err.message : String(err),
-    };
-  }
-}
-
-// ─── Delete Webhook ───────────────────────────────────────────────────────────
-
-export async function deleteWebhook(input: DeleteWebhookType, companyId: string) {
-  try {
-    const resolved = await resolveAdapter(input.serviceId, companyId);
-    if (resolved.error || !resolved.data) {
-      return { status: 'failed' as const, error: resolved.error };
-    }
-    const { adapter } = resolved.data;
-
-    const result = await adapter.deleteWebhook(input.webhookId, input.accountId);
-
-    return { status: 'success' as const, data: result };
-  } catch (err) {
-    logger.error(err);
-    return {
-      status: 'failed' as const,
-      error: err instanceof Error ? err.message : String(err),
-    };
-  }
-}
-
-// ─── Incoming Webhook Event Handler ──────────────────────────────────────────
-
-/**
- * Handles an incoming raw webhook event from a payment provider.
- * - Verifies the signature using the provider's secret.
- * - Persists the raw event to `webhook_events` for idempotent processing.
- * - Returns the parsed event so the route can respond 200 immediately.
- */
-export async function handleIncomingWebhookEvent(params: {
-  provider: 'stripe' | 'razorpay';
-  rawBody: Buffer;
-  signature: string;
-  secret: string;
-  /** Credentials required to create a temporary adapter instance for verification */
-  credentials: Record<string, string>;
-  webhookEndpointId?: string;
-}) {
-  try {
-    const providerName =
-      params.provider === 'stripe' ? ProviderName.STRIPE : ProviderName.RAZORPAY;
-
-    const adapter =
-      params.provider === 'razorpay'
-        ? new RazorpayAdapter({ apiKey: params.credentials.apiKey as string, apiSecret: params.credentials.apiSecret! })
-        : new StripeAdapter({ apiKey: params.credentials.apiKey as string });
-
-    const isValid = adapter.verifyWebhookSignature({
-      rawBody: params.rawBody,
-      signature: params.signature,
-      secret: params.secret,
-    });
-
-    if (!isValid) {
-      return { status: 'failed' as const, error: 'Invalid webhook signature' };
-    }
-
-    // Parse the raw body to extract event type
-    const payload = JSON.parse(params.rawBody.toString('utf-8'));
-    const eventType: string =
-      params.provider === 'stripe'
-        ? payload.type ?? 'unknown'
-        : payload.event ?? 'unknown';
-
-    // Persist to webhook_events table for downstream processing
-    await db.insert(webhookEvents).values({
-      webhookEndpointId: params.webhookEndpointId || '00000000-0000-0000-0000-000000000000',
-      providerEventId: params.provider === 'stripe' ? payload.id : payload.event_id || 'unknown',
-      payload,
-    });
-
-    return { status: 'success' as const, data: { eventType, received: true } };
-  } catch (err) {
-    logger.error(err);
-    return {
-      status: 'failed' as const,
-      error: err instanceof Error ? err.message : String(err),
-    };
-  }
-}
-
-// ─── List Stored Webhook Events ───────────────────────────────────────────────
-
-export async function listWebhookEvents(params: {
-  provider?: 'stripe' | 'razorpay';
-  processed?: boolean;
-  limit?: number;
-}) {
-  try {
-    const conditions: any[] = [];
-    // conditions filtered manually as schema changed
-
-    const rows = await db
-      .select()
-      .from(webhookEvents)
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(desc(webhookEvents.receivedAt))
-      .limit(params.limit ?? 50);
-
-    return { status: 'success' as const, data: rows };
-  } catch (err) {
-    logger.error(err);
-    return {
-      status: 'failed' as const,
-      error: err instanceof Error ? err.message : String(err),
-    };
-  }
+    return response;
 }

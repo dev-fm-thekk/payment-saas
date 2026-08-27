@@ -2,14 +2,7 @@ import { defineRelations } from "drizzle-orm";
 import * as schema from "./schema";
 
 export const relations = defineRelations(schema, (r) => ({
-	apiKeys: {
-		company: r.one.companies({
-			from: r.apiKeys.companyId,
-			to: r.companies.id
-		}),
-	},
 	companies: {
-		apiKeys: r.many.apiKeys(),
 		user: r.one.users({
 			from: r.companies.userId,
 			to: r.users.id
@@ -25,7 +18,6 @@ export const relations = defineRelations(schema, (r) => ({
 	},
 	services: {
 		clients: r.many.clients(),
-		providerConfigs: r.many.providerConfigs(),
 		company: r.one.companies({
 			from: r.services.companyId,
 			to: r.companies.id
@@ -44,28 +36,11 @@ export const relations = defineRelations(schema, (r) => ({
 			from: r.invoices.paymentLinkId,
 			to: r.paymentLinks.id
 		}),
-		transactions: r.many.transactions(),
 	},
 	paymentLinks: {
 		company: r.one.companies({
 			from: r.paymentLinks.companyId,
 			to: r.companies.id
-		}),
-	},
-	transactions: {
-		invoice: r.one.invoices({
-			from: r.transactions.invoiceId,
-			to: r.invoices.id
-		}),
-		company: r.one.companies({
-			from: r.transactions.companyId,
-			to: r.companies.id
-		}),
-	},
-	providerConfigs: {
-		service: r.one.services({
-			from: r.providerConfigs.serviceId,
-			to: r.services.id
 		}),
 	},
 	refreshTokens: {

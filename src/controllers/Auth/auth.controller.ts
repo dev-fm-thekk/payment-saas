@@ -1,13 +1,5 @@
 import type { Request, Response, NextFunction } from 'express';
-import logger from '../../services/logging/logging.service';
-import { type AuthRequest } from '../../middlewares/auth.middleware';
-import db from '../../../db';
-import { apiKeys, companies } from '../../../db/schema';
-import { eq } from 'drizzle-orm';
-import { CreateAPIKeySchema, validateSchema } from '../../../utils/schema';
-import { generateRandomToken, hashToken } from '../../../utils/hashing';
 import { login, logout, refreshToken } from './auth.helper';
-
 
 const cookieOptions = {
     httpOnly: true,
@@ -98,36 +90,5 @@ export const refreshTokenController = async (req: any,  res: any,  next: any) =>
         }
     } catch (err) {
         next(err);
-    }
-};
-
-export const apiKeyController = async (req:AuthRequest,  res: any) => {
-    try {
-        const { id, role } = req!.user!;
-
-        console.log(req.user);
-        const {data, error} = validateSchema(CreateAPIKeySchema, req.body);
-        
-        if (error) return res.status(400).send('companyId not found');
-        const token = generateRandomToken();
-        data.keyHash = hashToken(token);
-
-        if (error) return res.status(400).send({ error: error })
-        const company = await db.select().from(companies).where(eq(companies.userId, id))
-        if (company.length === 0) return res.status(400).send({ error: "company doesn't exists "});
-        
-        console.log(data);
-        await db.insert(apiKeys).values(data)
-        return res.status(201).send({
-            service: 'api-key-service',
-            operation: 'create',
-            payload: {
-                api_key: token
-            }
-        })
-    } catch(err) {
-        logger.error(err);
-        console.log(err);
-        return res.status(500).send("internal server error")
     }
 };

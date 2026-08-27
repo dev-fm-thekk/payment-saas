@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import { authenticateApiKey } from '../middlewares/apikey.middleware';
 import { authenticate } from '../middlewares/auth.middleware';
 import { createClient, getClient, listClients, updateClient, deleteClient } from '../controllers/Client/client.controller';
 

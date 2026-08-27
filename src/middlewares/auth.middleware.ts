@@ -1,11 +1,16 @@
 import type { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken } from '../../utils/hashing';
+import db from '../../db';
+import { companies } from '../../db/schema';
+import { eq } from 'drizzle-orm';
 
 export interface AuthRequest extends Request {
     user?: { id: string; role: string };
+    /** Populated by authenticate() from the user's owned company, if one exists. */
+    companyId?: string;
 }
 
-export function authenticate(req: AuthRequest, res: Response, next: NextFunction): void {
+export async function authenticate(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     const authHeader = req.headers['authorization'];
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         res.status(401).json({ status: 'failed', error: 'Missing or malformed authorization header' });
@@ -20,6 +25,24 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
     }
 
     req.user = payload;
+
+    // Attach companyId so that controllers that require it (payment-link, invoice,
+    // webhook management) work with JWT auth without needing a separate API key.
+    try {
+        const [company] = await db
+            .select({ id: companies.id })
+            .from(companies)
+            .where(eq(companies.userId, payload.id))
+            .limit(1);
+
+        if (company) {
+            (req as any).companyId = company.id;
+        }
+    } catch {
+        // Non-fatal — some routes don't need companyId (e.g. pure user routes).
+        // Controllers that require it will handle the missing value themselves.
+    }
+
     next();
 }
 

@@ -1,18 +1,16 @@
 import { Router } from 'express';
-import { authenticateApiKey } from '../middlewares/apikey.middleware';
 import { authenticate } from '../middlewares/auth.middleware';
-import { createInvoiceController, getInvoice, listInvoices, updateInvoice, deleteInvoice } from '../controllers/Invoice/invoice.controller';
+import { createInvoiceController } from '../controllers/Invoice/invoice.controller';
+// import { createInvoiceController, getInvoice, listInvoices, updateInvoice, deleteInvoice } from '../controllers/Invoice/invoice.controller';
 
 const router = Router();
-router.use(authenticateApiKey);
-
 /*
  * POST /
  * Payload: Invoice creation data
  * Status Codes: 201 (Created), 400 (Bad Request), 500 (Internal Server Error)
  * Returns: Created invoice object on success
  */
-router.post('/', authenticate, createInvoiceController);
+router.post('/', createInvoiceController);
 
 /*
  * GET /:companyId/:serviceId/
@@ -20,7 +18,7 @@ router.post('/', authenticate, createInvoiceController);
  * Status Codes: 200 (Success), 404 (Not Found), 500 (Internal Server Error)
  * Returns: List of invoices for the company and service on success
  */
-router.get('/:companyId/:serviceId/', authenticate, listInvoices);
+// router.get('/:companyId/:serviceId/', authenticate, listInvoices);
 
 /*
  * GET /:id
@@ -28,7 +26,7 @@ router.get('/:companyId/:serviceId/', authenticate, listInvoices);
  * Status Codes: 200 (Success), 404 (Not Found), 500 (Internal Server Error)
  * Returns: Invoice details on success
  */
-router.get('/:id', authenticate, getInvoice);
+// router.get('/:id', authenticate, getInvoice);
 
 /*
  * PATCH /:id
@@ -37,7 +35,7 @@ router.get('/:id', authenticate, getInvoice);
  * Status Codes: 200 (Success), 400 (Bad Request), 404 (Not Found), 500 (Internal Server Error)
  * Returns: Updated invoice object on success
  */
-router.patch('/:id', authenticate, updateInvoice);
+// router.patch('/:id', authenticate, updateInvoice);
 
 /*
  * DELETE /:id
@@ -45,6 +43,6 @@ router.patch('/:id', authenticate, updateInvoice);
  * Status Codes: 200 (Success), 404 (Not Found), 500 (Internal Server Error)
  * Returns: Success message on success
  */
-router.delete('/:id', authenticate, deleteInvoice);
+// router.delete('/:id', authenticate, deleteInvoice);
 
 export default router;

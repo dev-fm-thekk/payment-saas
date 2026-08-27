@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { loginController, logoutController, refreshTokenController, apiKeyController } from '../controllers/Auth/auth.controller';
+import { loginController, logoutController, refreshTokenController } from '../controllers/Auth/auth.controller';
 import { authenticate } from '../middlewares/auth.middleware';
 
 const router = Router();
@@ -27,13 +27,5 @@ router.post('/logout', logoutController);
  * Returns: { status, accessToken, refreshToken } on success, { status, error } on failure
  */
 router.post('/refresh', refreshTokenController);
-
-/*
- * POST /api-key
- * Header: Authorization (Bearer token)
- * Status Codes: 201 (Created), 400 (Bad Request), 500 (Internal Server Error)
- * Returns: { service, operation, payload: { api_key } } on success, error message on failure
- */
-router.post('/api-key', authenticate, apiKeyController);
 
 export default router;

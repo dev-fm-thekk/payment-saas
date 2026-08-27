@@ -4,7 +4,6 @@ import authRouter from './routes/auth.route';
 import userRouter from './routes/user.route';
 import companyRouter from './routes/company.route';
 import companyServiceRouter from './routes/company-service.route';
-import providerRouter from './routes/provider.route';
 import TransactionRouter from './routes/transactions.route';
 import webhookRouter from './routes/webhook.route';
 import InvoiceRouter from './routes/invoice.route';
@@ -13,8 +12,11 @@ import paymentLinkRouter from './routes/payment-link.route';
 import cookieParser from 'cookie-parser';
 
 import cors from 'cors';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerDocument } from './swagger';
 
 const app = express();
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // some default middlewars
 app.use(cors({ origin: ["http://localhost:3000"], credentials: true }))
@@ -29,7 +31,6 @@ appV1.use('/auth', authRouter);
 appV1.use('/user', userRouter);
 appV1.use('/company', companyRouter);
 appV1.use('/service', companyServiceRouter);
-appV1.use('/provider', providerRouter);
 appV1.use('/transaction', TransactionRouter);
 appV1.use('/webhook', webhookRouter);
 appV1.use('/invoice', InvoiceRouter);
