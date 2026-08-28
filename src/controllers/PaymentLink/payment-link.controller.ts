@@ -19,7 +19,7 @@ const createPaymentLinkSchema = PaymentLinkSchema.omit({
 })
 
 export const createPaymentLinkController = async (req: any, res: any) => {
-    const { data, error } = z.safeParse(createPaymentLinkSchema, req.body);
+    const { data, error } = createPaymentLinkSchema.safeParse(req.body);
 
     // returning 400 bad request for malformed request body
     if (error) return res.status(400).send({

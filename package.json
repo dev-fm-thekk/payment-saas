@@ -15,9 +15,7 @@
     "vitest": "^4.1.10"
   },
   "scripts": {
-    "dev": "bun run --watch src/server.ts",
-    "test-server": "vitest",
-    "test-core": "vitest test/core"
+    "dev": "bun run --watch src/server.ts"
   },
   "peerDependencies": {
     "typescript": "^5"

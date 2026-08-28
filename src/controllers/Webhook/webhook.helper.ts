@@ -42,7 +42,6 @@ export const createWebhook = async (input: CreateWebhookEndpoint) => {
 }
 
 export const handleWebhook = async (input: WebhookEvents) => {
-
     let webhookEndpoint = await db.select({ id: webhookEndpoints.id }).from(webhookEndpoints).where(eq(webhookEndpoints.url, input.webhookEndpoint)).limit(1);
 
     if (webhookEndpoint.length < 1) return 'WEBHOOK_ENDPOINT_NOT_FOUND';

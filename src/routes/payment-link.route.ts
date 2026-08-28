@@ -4,10 +4,11 @@ import { createPaymentLinkController } from '../controllers/PaymentLink/payment-
 
 const router = Router();
 
-/**
- * @route POST /
- * @desc Creates a new payment link using the configured provider
- * @access API Key
+/*
+ * POST /
+ * Payload: companyId (string), provider (string), url (string), expiresAt (string/date)
+ * Status Codes: 201 (Created), 400 (Bad Request), 500 (Internal Server Error)
+ * Returns: Created payment link on success
  */
 router.post('/', authenticate, createPaymentLinkController);
 

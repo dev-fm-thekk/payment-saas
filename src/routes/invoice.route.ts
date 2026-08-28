@@ -6,7 +6,7 @@ import { createInvoiceController } from '../controllers/Invoice/invoice.controll
 const router = Router();
 /*
  * POST /
- * Payload: Invoice creation data
+ * Payload: title (string), description (string), clientId (string), amount (string), currency (string), status (string), paymentLinkId (string), dueDate (string)
  * Status Codes: 201 (Created), 400 (Bad Request), 500 (Internal Server Error)
  * Returns: Created invoice object on success
  */

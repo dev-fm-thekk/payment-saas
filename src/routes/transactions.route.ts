@@ -5,6 +5,11 @@ import { Router } from 'express';
 const router = Router();
 
 
+/*
+ * GET /
+ * Status Codes: 200 (Success)
+ * Returns: 'under development' message
+ */
 router.get('/', (req, res) => res.send('under development'))
 /*
  * GET /list/:companyId/:serviceId

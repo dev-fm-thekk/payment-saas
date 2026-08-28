@@ -253,7 +253,7 @@ export const swaggerDocument = {
     '/invoice': {
       post: {
         summary: 'Create Invoice', tags: ['Invoice'], security: [{ bearerAuth: [] }],
-        requestBody: { required: true, content: { 'application/x-www-form-urlencoded': { schema: { type: 'object', properties: { serviceId: { type: 'string' }, amount: { type: 'number' }, clientId: { type: 'string' } }, required: ['serviceId', 'amount', 'clientId'] } } } },
+        requestBody: { required: true, content: { 'application/x-www-form-urlencoded': { schema: { type: 'object', properties: { title: { type: 'string' }, description: { type: 'string' }, clientId: { type: 'string' }, amount: { type: 'string' }, currency: { type: 'string' }, status: { type: 'string' }, paymentLinkId: { type: 'string' }, dueDate: { type: 'string' } }, required: ['title', 'description', 'clientId', 'amount', 'currency', 'status', 'paymentLinkId', 'dueDate'] } } } },
         responses: { '201': { description: 'Success' } }
       }
     },
@@ -284,26 +284,45 @@ export const swaggerDocument = {
     },
 
     // ─── WEBHOOK ───────────────────────────────────────────
-    '/webhook/{secret}': {
+    '/webhook': {
+      post: {
+        summary: 'Create Webhook Endpoint', tags: ['Webhook'],
+        requestBody: {
+          required: true,
+          content: {
+            'application/x-www-form-urlencoded': {
+              schema: { type: 'object', properties: { companyId: { type: 'string' }, provider: { type: 'string' } }, required: ['companyId', 'provider'] }
+            }
+          }
+        },
+        responses: { '201': { description: 'Success' }, '400': { description: 'Bad Request' }, '500': { description: 'Internal Server Error' } }
+      }
+    },
+    '/webhook/{companyId}/{provider}/{secret}': {
       post: {
         summary: 'Receive Webhook Event', tags: ['Webhook'],
-        description: 'Accepts incoming payment-provider events. The :secret is the endpointToken generated when the provider was registered. No auth required — the provider signature header is verified instead.',
-        parameters: [{ name: 'secret', in: 'path', required: true, schema: { type: 'string' }, description: 'endpointToken associated with the webhook endpoint' }],
+        description: 'Accepts incoming payment-provider events. No auth required.',
+        parameters: [
+          { name: 'companyId', in: 'path', required: true, schema: { type: 'string' } },
+          { name: 'provider', in: 'path', required: true, schema: { type: 'string' } },
+          { name: 'secret', in: 'path', required: true, schema: { type: 'string' }, description: 'endpointToken associated with the webhook endpoint' }
+        ],
         requestBody: {
           required: true,
           content: {
             'application/json': {
               schema: {
                 type: 'object',
-                description: 'Raw provider event payload (Stripe Event or Razorpay webhook body)',
+                description: 'Raw provider event payload',
                 additionalProperties: true,
               }
             }
           }
         },
         responses: {
-          '200': { description: 'Event acknowledged (success or ignored)' },
-          '400': { description: 'Invalid signature or unknown endpoint' }
+          '201': { description: 'Event acknowledged (success or ignored)' },
+          '404': { description: 'Webhook endpoint not found' },
+          '500': { description: 'Processing Error' }
         }
       }
     },
@@ -312,7 +331,7 @@ export const swaggerDocument = {
     '/payment-link': {
       post: {
         summary: 'Create Payment Link', tags: ['Payment Link'], security: [{ bearerAuth: [] }],
-        requestBody: { required: true, content: { 'application/x-www-form-urlencoded': { schema: { type: 'object', properties: { serviceId: { type: 'string' }, amount: { type: 'number' }, currency: { type: 'string' }, callback_url: { type: 'string' } }, required: ['serviceId', 'amount', 'currency', 'callback_url'] } } } },
+        requestBody: { required: true, content: { 'application/x-www-form-urlencoded': { schema: { type: 'object', properties: { companyId: { type: 'string' }, provider: { type: 'string' }, url: { type: 'string' }, expiresAt: { type: 'string' } }, required: ['companyId', 'provider', 'url', 'expiresAt'] } } } },
         responses: { '201': { description: 'Success' } }
       }
     },
