@@ -9,7 +9,6 @@ export const swaggerDocument = {
   components: {
     securitySchemes: {
       bearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
-      apiKeyAuth: { type: 'apiKey', in: 'header', name: 'x-api-key' },
     },
   },
   paths: {
@@ -30,20 +29,6 @@ export const swaggerDocument = {
     },
     '/auth/logout': { post: { summary: 'Logout', tags: ['Authentication'], responses: { '200': { description: 'Success' } } } },
     '/auth/refresh': { post: { summary: 'Refresh Token', tags: ['Authentication'], responses: { '200': { description: 'Success' } } } },
-    '/auth/api-key': {
-      post: {
-        summary: 'Generate API Key', tags: ['Authentication'], security: [{ bearerAuth: [] }],
-        requestBody: {
-          required: true,
-          content: {
-            'application/x-www-form-urlencoded': {
-              schema: { type: 'object', properties: { companyId: { type: 'string' } }, required: ['companyId'] }
-            }
-          }
-        },
-        responses: { '201': { description: 'Success' } }
-      }
-    },
 
     // ─── USER ──────────────────────────────────────────────
     '/user/register': {
@@ -145,73 +130,7 @@ export const swaggerDocument = {
       }
     },
 
-    // ─── PROVIDER ──────────────────────────────────────────
-    '/provider': {
-      post: {
-        summary: 'Add Provider Config', tags: ['Provider'], security: [{ bearerAuth: [] }],
-        requestBody: { required: true, content: { 'application/x-www-form-urlencoded': { schema: { type: 'object', properties: { serviceId: { type: 'string' }, provider: { type: 'string', enum: ['stripe', 'razorpay'] }, apiKey: { type: 'string' }, apiSecret: { type: 'string' } }, required: ['serviceId', 'provider', 'apiKey', 'apiSecret'] } } } },
-        responses: {
-          '201': { description: 'Provider created and webhook registered. Returns provider record and webhookUrl.' }
-        }
-      }
-    },
-    '/provider/service/{serviceId}': {
-      get: {
-        summary: 'List Providers by Service', tags: ['Provider'], security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'serviceId', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'Success' } }
-      }
-    },
-    '/provider/{id}': {
-      get: {
-        summary: 'Get Provider', tags: ['Provider'], security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'Success' } }
-      },
-      patch: {
-        summary: 'Update Provider Config', tags: ['Provider'], security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        requestBody: { content: { 'application/x-www-form-urlencoded': { schema: { type: 'object', properties: { credentialsEncrypted: { type: 'string', description: 'JSON-encoded credentials object' } } } } } },
-        responses: { '200': { description: 'Success' } }
-      },
-      delete: {
-        summary: 'Delete Provider Config', tags: ['Provider'], security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'Success' } }
-      }
-    },
 
-    // ─── PAYMENT ───────────────────────────────────────────
-    '/payment/pay': {
-      post: {
-        summary: 'Process Payment', tags: ['Payment'], security: [{ apiKeyAuth: [] }],
-        requestBody: { required: true, content: { 'application/x-www-form-urlencoded': { schema: { type: 'object', properties: { serviceId: { type: 'string' }, amount: { type: 'number' }, currency: { type: 'string' }, description: { type: 'string' }, receipt: { type: 'string' } }, required: ['serviceId', 'amount', 'currency'] } } } },
-        responses: { '200': { description: 'Success' } }
-      }
-    },
-    '/payment/refund': {
-      post: {
-        summary: 'Process Refund', tags: ['Payment'], security: [{ apiKeyAuth: [] }],
-        requestBody: { required: true, content: { 'application/x-www-form-urlencoded': { schema: { type: 'object', properties: { serviceId: { type: 'string' }, paymentId: { type: 'string' }, amount: { type: 'number' }, reason: { type: 'string' } }, required: ['serviceId', 'paymentId'] } } } },
-        responses: { '200': { description: 'Success' } }
-      }
-    },
-
-    // ─── TRANSACTION ───────────────────────────────────────
-    '/transaction/list/{companyId}/{serviceId}': {
-      get: {
-        summary: 'List Transactions', tags: ['Transaction'], security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'companyId', in: 'path', required: true, schema: { type: 'string' } }, { name: 'serviceId', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'Success' } }
-      }
-    },
-    '/transaction/{companyId}/{serviceId}/id/info': {
-      get: {
-        summary: 'Get Transaction Info', tags: ['Transaction'], security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'companyId', in: 'path', required: true, schema: { type: 'string' } }, { name: 'serviceId', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'Success' } }
-      }
-    },
 
     // ─── CLIENT ────────────────────────────────────────────
     '/client': {
