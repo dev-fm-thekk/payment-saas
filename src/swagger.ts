@@ -326,6 +326,37 @@ export const swaggerDocument = {
         }
       }
     },
+    '/webhook/{companyId}/{provider}': {
+      get: {
+        summary: 'Get Webhook Endpoints', tags: ['Webhook'], security: [{ bearerAuth: [] }],
+        description: 'Returns a list of webhook endpoints registered for the given company and provider.',
+        parameters: [
+          { name: 'companyId', in: 'path', required: true, schema: { type: 'string' }, description: 'ID of the company' },
+          { name: 'provider', in: 'path', required: true, schema: { type: 'string' }, description: 'Payment provider name (e.g. stripe, razorpay)' }
+        ],
+        responses: {
+          '200': { description: 'List of webhook endpoints' },
+          '400': { description: 'Bad Request' },
+          '404': { description: 'Not Found' },
+          '500': { description: 'Internal Server Error' }
+        }
+      }
+    },
+    '/webhook/event/logs/{webhookId}': {
+      get: {
+        summary: 'Get Webhook Event Logs', tags: ['Webhook'], security: [{ bearerAuth: [] }],
+        description: 'Returns the event logs for a specific webhook endpoint.',
+        parameters: [
+          { name: 'webhookId', in: 'path', required: true, schema: { type: 'string' }, description: 'ID of the webhook endpoint' }
+        ],
+        responses: {
+          '200': { description: 'Webhook event logs' },
+          '400': { description: 'Bad Request' },
+          '404': { description: 'Not Found' },
+          '500': { description: 'Internal Server Error' }
+        }
+      }
+    },
 
     // ─── PAYMENT LINK ──────────────────────────────────────
     '/payment-link': {
