@@ -11,7 +11,7 @@ export const relations = defineRelations(schema, (r) => ({
 	},
 	clients: {
 		service: r.one.services({
-			from: r.clients.serviceId,
+			from: r.clients.service_id,
 			to: r.services.id
 		}),
 		invoices: r.many.invoices(),

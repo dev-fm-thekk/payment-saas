@@ -1,48 +1,54 @@
-import { Router } from 'express';
-import { authenticate } from '../middlewares/auth.middleware';
-import { createInvoiceController } from '../controllers/Invoice/invoice.controller';
-// import { createInvoiceController, getInvoice, listInvoices, updateInvoice, deleteInvoice } from '../controllers/Invoice/invoice.controller';
+import { Router } from "express";
+import { authenticate } from "../middlewares/auth.middleware";
+import {
+  createInvoiceController,
+  getInvoiceController,
+  listInvoicesController,
+  updateInvoiceController,
+  deleteInvoiceController,
+} from "../controllers/Invoice/invoice.controller";
 
 const router = Router();
-/*
- * POST /
- * Payload: title (string), description (string), clientId (string), amount (string), currency (string), status (string), paymentLinkId (string), dueDate (string)
- * Status Codes: 201 (Created), 400 (Bad Request), 500 (Internal Server Error)
- * Returns: Created invoice object on success
- */
-router.post('/', createInvoiceController);
 
 /*
- * GET /:companyId/:serviceId/
- * Params: companyId (string), serviceId (string)
- * Status Codes: 200 (Success), 404 (Not Found), 500 (Internal Server Error)
- * Returns: List of invoices for the company and service on success
+ * POST /
+ * Payload: title, description, clientId, amount, currency, status, paymentLinkId, dueDate
+ * Status Codes: 201 (Created), 400 (Bad Request), 404 (Client Not Found), 500 (Internal Server Error)
+ * Returns: Created invoice on success
  */
-// router.get('/:companyId/:serviceId/', authenticate, listInvoices);
+router.post("/", authenticate, createInvoiceController);
+
+/*
+ * GET /client/:clientId
+ * Params: clientId (uuid)
+ * Status Codes: 200 (Success), 500 (Internal Server Error)
+ * Returns: List of invoices for the given client
+ */
+router.get("/client/:clientId", authenticate, listInvoicesController);
 
 /*
  * GET /:id
- * Params: id (string)
+ * Params: id (uuid)
  * Status Codes: 200 (Success), 404 (Not Found), 500 (Internal Server Error)
  * Returns: Invoice details on success
  */
-// router.get('/:id', authenticate, getInvoice);
+router.get("/:id", authenticate, getInvoiceController);
 
 /*
  * PATCH /:id
- * Params: id (string)
- * Payload: Invoice update data
+ * Params: id (uuid)
+ * Payload: Partial invoice fields (title, description, amount, currency, status, paymentLinkId, dueDate)
  * Status Codes: 200 (Success), 400 (Bad Request), 404 (Not Found), 500 (Internal Server Error)
- * Returns: Updated invoice object on success
+ * Returns: Updated invoice on success
  */
-// router.patch('/:id', authenticate, updateInvoice);
+router.patch("/:id", authenticate, updateInvoiceController);
 
 /*
  * DELETE /:id
- * Params: id (string)
+ * Params: id (uuid)
  * Status Codes: 200 (Success), 404 (Not Found), 500 (Internal Server Error)
- * Returns: Success message on success
+ * Returns: Deleted invoice record on success
  */
-// router.delete('/:id', authenticate, deleteInvoice);
+router.delete("/:id", authenticate, deleteInvoiceController);
 
 export default router;

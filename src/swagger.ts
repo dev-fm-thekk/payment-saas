@@ -253,33 +253,91 @@ export const swaggerDocument = {
     '/invoice': {
       post: {
         summary: 'Create Invoice', tags: ['Invoice'], security: [{ bearerAuth: [] }],
-        requestBody: { required: true, content: { 'application/x-www-form-urlencoded': { schema: { type: 'object', properties: { title: { type: 'string' }, description: { type: 'string' }, clientId: { type: 'string' }, amount: { type: 'string' }, currency: { type: 'string' }, status: { type: 'string' }, paymentLinkId: { type: 'string' }, dueDate: { type: 'string' } }, required: ['title', 'description', 'clientId', 'amount', 'currency', 'status', 'paymentLinkId', 'dueDate'] } } } },
-        responses: { '201': { description: 'Success' } }
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['title', 'description', 'clientId', 'amount', 'currency', 'dueDate'],
+                properties: {
+                  title: { type: 'string' },
+                  description: { type: 'string' },
+                  clientId: { type: 'string', format: 'uuid' },
+                  amount: { type: 'string', description: 'Amount in minor units (e.g. paise, cents)' },
+                  currency: { type: 'string', example: 'INR' },
+                  status: { type: 'string', enum: ['draft', 'pending', 'paid', 'failed', 'expired'], default: 'draft' },
+                  paymentLinkId: { type: 'string', format: 'uuid' },
+                  dueDate: { type: 'string', format: 'date-time' },
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          '201': { description: 'Invoice created successfully' },
+          '400': { description: 'Validation error' },
+          '404': { description: 'Client not found' },
+          '500': { description: 'Internal Server Error' }
+        }
       }
     },
-    '/invoice/{companyId}/{serviceId}': {
+    '/invoice/client/{clientId}': {
       get: {
-        summary: 'List Invoices', tags: ['Invoice'], security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'companyId', in: 'path', required: true, schema: { type: 'string' } }, { name: 'serviceId', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'Success' } }
+        summary: 'List Invoices by Client', tags: ['Invoice'], security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'clientId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' }, description: 'UUID of the client' }],
+        responses: {
+          '200': { description: 'List of invoices for the client' },
+          '500': { description: 'Internal Server Error' }
+        }
       }
     },
     '/invoice/{id}': {
       get: {
         summary: 'Get Invoice', tags: ['Invoice'], security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'Success' } }
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        responses: {
+          '200': { description: 'Invoice details' },
+          '404': { description: 'Invoice not found' },
+          '500': { description: 'Internal Server Error' }
+        }
       },
       patch: {
         summary: 'Update Invoice', tags: ['Invoice'], security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        requestBody: { content: { 'application/x-www-form-urlencoded': { schema: { type: 'object', properties: { status: { type: 'string' } } } } } },
-        responses: { '200': { description: 'Success' } }
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  title: { type: 'string' },
+                  description: { type: 'string' },
+                  amount: { type: 'string', description: 'Amount in minor units' },
+                  currency: { type: 'string' },
+                  status: { type: 'string', enum: ['draft', 'pending', 'paid', 'failed', 'expired'] },
+                  paymentLinkId: { type: 'string', format: 'uuid' },
+                  dueDate: { type: 'string', format: 'date-time' },
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          '200': { description: 'Updated invoice' },
+          '400': { description: 'Validation error' },
+          '404': { description: 'Invoice not found' },
+          '500': { description: 'Internal Server Error' }
+        }
       },
       delete: {
         summary: 'Delete Invoice', tags: ['Invoice'], security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'Success' } }
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        responses: {
+          '200': { description: 'Deleted invoice record' },
+          '404': { description: 'Invoice not found' },
+          '500': { description: 'Internal Server Error' }
+        }
       }
     },
 
@@ -362,15 +420,82 @@ export const swaggerDocument = {
     '/payment-link': {
       post: {
         summary: 'Create Payment Link', tags: ['Payment Link'], security: [{ bearerAuth: [] }],
-        requestBody: { required: true, content: { 'application/x-www-form-urlencoded': { schema: { type: 'object', properties: { companyId: { type: 'string' }, provider: { type: 'string' }, url: { type: 'string' }, expiresAt: { type: 'string' } }, required: ['companyId', 'provider', 'url', 'expiresAt'] } } } },
-        responses: { '201': { description: 'Success' } }
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['companyId', 'provider', 'url', 'expiresAt'],
+                properties: {
+                  companyId: { type: 'string', format: 'uuid' },
+                  provider: { type: 'string', example: 'razorpay' },
+                  url: { type: 'string', format: 'uri' },
+                  expiresAt: { type: 'string', format: 'date-time' },
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          '201': { description: 'Payment link created successfully' },
+          '400': { description: 'Validation error' },
+          '500': { description: 'Internal Server Error' }
+        }
       }
     },
-    '/payment-link/{linkId}': {
+    '/payment-link/company/{companyId}': {
+      get: {
+        summary: 'List Payment Links by Company', tags: ['Payment Link'], security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'companyId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' }, description: 'UUID of the company' }],
+        responses: {
+          '200': { description: 'List of payment links for the company' },
+          '500': { description: 'Internal Server Error' }
+        }
+      }
+    },
+    '/payment-link/{id}': {
       get: {
         summary: 'Get Payment Link', tags: ['Payment Link'], security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'linkId', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'Success' } }
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        responses: {
+          '200': { description: 'Payment link details' },
+          '404': { description: 'Payment link not found' },
+          '500': { description: 'Internal Server Error' }
+        }
+      },
+      patch: {
+        summary: 'Update Payment Link', tags: ['Payment Link'], security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        requestBody: {
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  url: { type: 'string', format: 'uri' },
+                  status: { type: 'string', enum: ['active', 'expired', 'consumed'] },
+                  expiresAt: { type: 'string', format: 'date-time' },
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          '200': { description: 'Updated payment link' },
+          '400': { description: 'Validation error' },
+          '404': { description: 'Payment link not found' },
+          '500': { description: 'Internal Server Error' }
+        }
+      },
+      delete: {
+        summary: 'Delete Payment Link', tags: ['Payment Link'], security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        responses: {
+          '200': { description: 'Deleted payment link record' },
+          '404': { description: 'Payment link not found' },
+          '500': { description: 'Internal Server Error' }
+        }
       }
     }
   }

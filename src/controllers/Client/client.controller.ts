@@ -47,7 +47,7 @@ export const getClient = async (req: Request, res: Response, next: NextFunction)
 export const listClients = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const { serviceId } = req.params;
-        const fetchedClients = await db.select().from(clients).where(eq(clients.serviceId, serviceId as string));
+        const fetchedClients = await db.select().from(clients).where(eq(clients.service_id, serviceId as string));
         res.status(200).json({ status: 'success', payload: fetchedClients });
     } catch(err) {
         next(err);
