@@ -24,8 +24,11 @@ export const createWebhookController = async (req: any, res: any) => {
       status: "failed",
       error: error.message,
     });
+  
+  const host = req.get('host');
+  const baseUrl = `${host}/api/v1`;
   try {
-    const response = await createWebhook(data);
+    const response = await createWebhook(data, baseUrl);
     return res.status(201).send({
       status: "success",
       service: "webhook | create",
@@ -41,13 +44,10 @@ export const createWebhookController = async (req: any, res: any) => {
 };
 
 export const webhookHandler = async (req: any, res: any) => {
-  // const { protocol, originalUrl} = req;
-  // const host = req.get('host');
+  const { protocol, originalUrl} = req;
+  const host = req.get('host');
 
-  // let webhookEndpoint = `${protocol}://${host}${originalUrl}`;
-
-  let webhookEndpoint =
-    "https://593tpgg3-3001.inc1.devtunnels.ms/api/v1/webhook/77a74585-dbe2-435f-8a09-59edd2215842/razorpay/ca0ea569ef0587df3a66a70cbc2a31d3";
+  let webhookEndpoint = `${protocol}://${host}${originalUrl}`;
     
   let input = {
     payload: req.body,

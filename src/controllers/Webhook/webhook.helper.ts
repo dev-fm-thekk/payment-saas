@@ -19,19 +19,18 @@ type WebhookEvents = {
     webhookEndpoint: string
 };
 
-const BASE_URL = 'http://localhost:3001/api/v1';
 
-function generateWebhookUrl(provider: string, companyId: string): string {
+function generateWebhookUrl(provider: string, companyId: string, baseUrl: string): string {
     let uniqueSecret = crypto.randomBytes(16).toString('hex');
     
-    let url = `${BASE_URL}/webhook/${companyId}/${provider}/${uniqueSecret}`;
+    let url = `${baseUrl}/webhook/${companyId}/${provider}/${uniqueSecret}`;
 
     return url;
 }
 
-export const createWebhook = async (input: CreateWebhookEndpoint) => {
+export const createWebhook = async (input: CreateWebhookEndpoint, baseUrl: string) => {
     let { provider, companyId } = input;
-    let url = generateWebhookUrl(provider, companyId);
+    let url = generateWebhookUrl(provider, companyId, baseUrl);
     let insertData = {
         ...input,
         url,
