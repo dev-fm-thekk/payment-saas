@@ -259,6 +259,18 @@ export const swaggerDocument = {
         }
       }
     },
+    '/invoice/notify/{id}': {
+      post: {
+        summary: 'Send Invoice Notification', tags: ['Invoice'], security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        responses: {
+          '200': { description: 'Invoice sent successfully' },
+          '400': { description: 'Client email not found' },
+          '404': { description: 'Invoice or client not found' },
+          '500': { description: 'Internal Server Error / Email Failed' }
+        }
+      }
+    },
 
     // ─── WEBHOOK ───────────────────────────────────────────
     '/webhook': {
