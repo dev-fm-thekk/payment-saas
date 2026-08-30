@@ -9,6 +9,7 @@ import webhookRouter from './routes/webhook.route';
 import InvoiceRouter from './routes/invoice.route';
 import ClientRouter from './routes/client.route';
 import paymentLinkRouter from './routes/payment-link.route';
+import notificationRouter from './routes/notification.route';
 import cookieParser from 'cookie-parser';
 
 import cors from 'cors';

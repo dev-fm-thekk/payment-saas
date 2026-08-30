@@ -6,6 +6,7 @@ import {
   listInvoicesController,
   updateInvoiceController,
   deleteInvoiceController,
+  notifyInvoiceController,
 } from "../controllers/Invoice/invoice.controller";
 
 const router = Router();
@@ -50,5 +51,13 @@ router.patch("/:id", authenticate, updateInvoiceController);
  * Returns: Deleted invoice record on success
  */
 router.delete("/:id", authenticate, deleteInvoiceController);
+
+/*
+ * POST /notify/:id
+ * Params: id (uuid)
+ * Status Codes: 200 (Success), 400 (Bad Request), 404 (Not Found), 500 (Internal Server Error)
+ * Returns: Updated invoice record on success
+ */
+router.post("/notify/:id", authenticate, notifyInvoiceController);
 
 export default router;

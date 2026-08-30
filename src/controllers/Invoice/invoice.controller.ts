@@ -156,3 +156,42 @@ export const deleteInvoiceController = async (
     next(err);
   }
 };
+
+import { notifyInvoiceById } from "./invoice.helper";
+
+/*
+ * POST /notify/:id
+ * Send an invoice via email
+ */
+export const notifyInvoiceController = async (
+  req: any,
+  res: any,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const { id: userId} = req.user;
+    const id = req.params.id as string;
+    const result = await notifyInvoiceById(id, userId);
+
+    if (result === "INVOICE_NOT_FOUND") {
+      res.status(404).json({ status: "failed", service: "invoice | notify", error: "Invoice not found" });
+      return;
+    }
+    if (result === "CLIENT_NOT_FOUND") {
+      res.status(404).json({ status: "failed", service: "invoice | notify", error: "Client not found" });
+      return;
+    }
+    if (result === "CLIENT_EMAIL_NOT_FOUND") {
+      res.status(400).json({ status: "failed", service: "invoice | notify", error: "Client email not found" });
+      return;
+    }
+    if (result === "EMAIL_FAILED") {
+      res.status(500).json({ status: "failed", service: "invoice | notify", error: "Failed to send email" });
+      return;
+    }
+
+    res.status(200).json({ status: "success", service: "invoice | notify", data: result });
+  } catch (err) {
+    next(err);
+  }
+};

@@ -254,3 +254,11 @@ export const GetPaymentLinkSchema = z.object({
 
 export type CreatePaymentLinkInputType = z.infer<typeof CreatePaymentLinkSchema>;
 export type GetPaymentLinkInputType = z.infer<typeof GetPaymentLinkSchema>;
+// ─── Notifications API ────────────────────────────────────────────────────────
+export const CreateNotificationSchema = z.object({
+  to: z.string().email(),
+  title: z.string().min(1),
+  subject: z.string().min(1),
+  body: z.string().min(1),
+});
+export type CreateNotificationInputType = z.infer<typeof CreateNotificationSchema>;

@@ -90,3 +90,77 @@ export const deleteInvoiceById = async (id: string) => {
 
   return deleted ?? null;
 };
+
+import { notifications, paymentLinks } from "../../../db/schema";
+import { sendNotificationEmail } from "../../services/notification";
+
+export const notifyInvoiceById = async (id: string, userId: string) => {
+  const invoice = await getInvoiceById(id);
+  if (!invoice) return "INVOICE_NOT_FOUND";
+
+  const client = await db
+    .select({ email: clients.email, name: clients.name })
+    .from(clients)
+    .where(eq(clients.id, invoice.clientId!))
+    .limit(1);
+
+  if (client.length === 0) return "CLIENT_NOT_FOUND";
+  if (!client[0]!.email) return "CLIENT_EMAIL_NOT_FOUND";
+
+  let paymentUrl = "";
+  if (invoice.paymentLinkId) {
+    const pLink = await db
+      .select({ url: paymentLinks.url })
+      .from(paymentLinks)
+      .where(eq(paymentLinks.id, invoice.paymentLinkId))
+      .limit(1);
+    
+    if (pLink.length > 0) {
+      paymentUrl = pLink[0]!.url;
+    }
+  }
+
+  const to = client[0]!.email;
+  const subject = `Invoice ${invoice.invoiceNumber} from ${client[0]!.name}`;
+  
+  let body = `Hello ${client[0]!.name},\n\nYou have a new invoice (${invoice.invoiceNumber}) for the amount of ${invoice.currency} ${invoice.amount}.\nDue date: ${invoice.dueDate}\n`;
+  if (paymentUrl) {
+    body += `\nYou can pay your invoice here: ${paymentUrl}\n`;
+  }
+  body += `\nThank you!`;
+
+  try {
+    await sendNotificationEmail(to, subject, body);
+    
+    // Log the notification
+    await db.insert(notifications).values({
+      to,
+      userId,
+      title: "Invoice Notification",
+      subject,
+      body,
+      status: "sent",
+    });
+
+    // Update invoice status to pending
+    const [updated] = await db
+      .update(invoices)
+      .set({ status: "pending", updatedAt: new Date() })
+      .where(eq(invoices.id, id))
+      .returning();
+
+    return updated;
+  } catch (err) {
+    // Log failed notification
+    await db.insert(notifications).values({
+      to,
+      userId,
+      title: "Invoice Notification",
+      subject,
+      body,
+      status: "failed",
+    });
+    return "EMAIL_FAILED";
+  }
+};
+

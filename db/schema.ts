@@ -106,3 +106,16 @@ export const webhookEvents = pgTable("webhook_events", {
 	payload: jsonb().notNull(),
 	receivedAt: timestamp("received_at").default(sql`now()`),
 });
+
+export const notifications = pgTable("notifications", {
+	id: uuid().defaultRandom().primaryKey(),
+	userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+	to: text().notNull(),
+	title: text().notNull(),
+	subject: text().notNull(),
+	body: text().notNull(),
+	status: text().default("pending").notNull(),
+	createdAt: timestamp("created_at").default(sql`now()`),
+}, (table) => [
+	check("notifications_status_check", sql`(status = ANY (ARRAY['pending'::text, 'sent'::text, 'failed'::text]))`),
+]);
