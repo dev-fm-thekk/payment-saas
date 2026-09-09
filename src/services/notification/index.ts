@@ -1,14 +1,18 @@
 import nodemailer from "nodemailer";
 import vars from "../../../configs/config";
 import logger from "../logging/logging.service";
+import type SMTPTransport from "nodemailer/lib/smtp-transport";
 
 const transport = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
+  family: 4,
   auth: {
     user: "abhiramajithr@gmail.com",
     pass: vars.GOOGLE_APP_PASSWORD,
   },
-});
+} as SMTPTransport.Options);
 
 const senderEmail = "abhiramajithr@gmail.com";
 
