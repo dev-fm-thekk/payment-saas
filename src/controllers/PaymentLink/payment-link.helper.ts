@@ -1,32 +1,55 @@
-import db from "../../../db";
-import { paymentLinks } from "../../../db/schema";
+import db from "../../../db/index.js";
+import { paymentLinks } from "../../../db/schema.js";
 import { eq } from "drizzle-orm";
+import { resolveAdapter } from "../../lib/adapter.factory.js";
+import type { CreatePaymentLinkRequest } from "../../../core/types.js";
 
-type PaymentLink = {
-  id: string;
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export type CreatePaymentLinkInput = {
+  /** ID of the provider row (from the providers table) */
+  providerId: string;
   companyId: string;
-  provider: string;
-  url: string;
-  status: string;
-  createdAt: Date | string;
-  expiresAt: Date | string;
+  /** Full CreatePaymentLinkRequest forwarded to the adapter */
+  linkRequest: CreatePaymentLinkRequest;
+  expiresAt?: string | Date;
 };
 
-type CreatePaymentLink = Omit<PaymentLink, "id" | "createdAt" | "status">;
+type UpdatePaymentLink = Partial<{
+  url: string;
+  status: "active" | "expired" | "consumed";
+  expiresAt: string | Date;
+}>;
 
-type UpdatePaymentLink = Partial<Pick<PaymentLink, "url" | "status" | "expiresAt">>;
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
-export const createPaymentLink = async (input: CreatePaymentLink): Promise<Array<any>> => {
+/**
+ * Calls the provider adapter to create a payment link, then persists the
+ * resulting URL and metadata in the payment_links table.
+ */
+export const createPaymentLink = async (input: CreatePaymentLinkInput) => {
+  const { adapter, provider } = await resolveAdapter(input.providerId);
+
+  // Call the provider API
+  const providerResponse = await adapter.createPaymentLink(input.linkRequest);
+
+  // Persist the result
   const insertData = {
-    ...input,
-    status: "active",
-    expiresAt:
-      typeof input.expiresAt === "string" ? new Date(input.expiresAt) : input.expiresAt,
+    companyId: input.companyId,
+    provider: provider.type,
+    url: providerResponse.url,
+    status: "active" as const,
+    expiresAt: input.expiresAt
+      ? typeof input.expiresAt === "string"
+        ? new Date(input.expiresAt)
+        : input.expiresAt
+      : undefined,
   };
-  const response = await db.insert(paymentLinks).values(insertData).returning();
-  if (response.length < 1)
-    throw new Error("DB Error: Unable to create payment link, db insert error");
-  return response;
+
+  const [record] = await db.insert(paymentLinks).values(insertData).returning();
+  if (!record) throw new Error("DB Error: Unable to create payment link record");
+
+  return { record, providerResponse };
 };
 
 export const getPaymentLinkById = async (id: string) => {

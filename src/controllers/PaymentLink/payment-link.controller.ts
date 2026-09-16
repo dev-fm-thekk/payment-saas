@@ -6,13 +6,30 @@ import {
   listPaymentLinksByCompany,
   updatePaymentLinkById,
   deletePaymentLinkById,
-} from "./payment-link.helper";
+} from "./payment-link.helper.js";
+
+// ─── Schemas ──────────────────────────────────────────────────────────────────
+
+const CustomerSchema = z.object({
+  name: z.string(),
+  email: z.string().email(),
+  contact: z.string(),
+});
 
 const CreatePaymentLinkSchema = z.object({
-  companyId: z.string().uuid(),
-  provider: z.string(),
-  url: z.string().url(),
-  expiresAt: z.string().or(z.date()),
+  /** ID of the row in the providers table */
+  providerId: z.string().uuid("providerId must be a valid UUID"),
+  companyId: z.string().uuid("companyId must be a valid UUID"),
+  /** Fields forwarded directly to the adapter */
+  amount: z.number().int().positive(),
+  currency: z.string(),
+  description: z.string().optional(),
+  callback_url: z.string().url(),
+  callback_method: z.string().optional(),
+  upi_link: z.boolean().optional(),
+  metadata: z.record(z.string()).optional(),
+  customer: CustomerSchema.optional(),
+  expiresAt: z.string().or(z.date()).optional(),
 });
 
 const UpdatePaymentLinkSchema = z.object({
@@ -21,9 +38,12 @@ const UpdatePaymentLinkSchema = z.object({
   expiresAt: z.string().or(z.date()).optional(),
 });
 
+// ─── Controllers ──────────────────────────────────────────────────────────────
+
 /*
- * POST /
- * Create a new payment link
+ * POST /payment-link
+ * Calls the resolved provider adapter to create a real payment link, then
+ * saves the resulting URL in the payment_links table.
  */
 export const createPaymentLinkController = async (
   req: Request,
@@ -37,16 +57,28 @@ export const createPaymentLinkController = async (
       return;
     }
 
-    const response = await createPaymentLink(data);
+    const { providerId, companyId, expiresAt, ...linkRequest } = data;
+
+    const response = await createPaymentLink({
+      providerId,
+      companyId,
+      linkRequest,
+      expiresAt,
+    });
+
     res.status(201).json({ status: "success", service: "payment-link | create", data: response });
-  } catch (err) {
+  } catch (err: any) {
+    if (err?.statusCode) {
+      res.status(err.statusCode).json({ status: "failed", service: "payment-link | create", error: err.message });
+      return;
+    }
     next(err);
   }
 };
 
 /*
- * GET /:id
- * Fetch a single payment link by ID
+ * GET /payment-link/:id
+ * Fetch a single payment link record by ID.
  */
 export const getPaymentLinkController = async (
   req: Request,
@@ -54,7 +86,7 @@ export const getPaymentLinkController = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const id  = req.params.id as string;
+    const id = req.params.id as string;
     const link = await getPaymentLinkById(id);
 
     if (!link) {
@@ -69,8 +101,8 @@ export const getPaymentLinkController = async (
 };
 
 /*
- * GET /company/:companyId
- * List all payment links for a company
+ * GET /payment-link/company/:companyId
+ * List all payment links for a company.
  */
 export const listPaymentLinksController = async (
   req: Request,
@@ -78,7 +110,7 @@ export const listPaymentLinksController = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const companyId  = req.params.companyId as string;
+    const companyId = req.params.companyId as string;
     const links = await listPaymentLinksByCompany(companyId);
     res.status(200).json({ status: "success", service: "payment-link | list", data: links });
   } catch (err) {
@@ -87,8 +119,8 @@ export const listPaymentLinksController = async (
 };
 
 /*
- * PATCH /:id
- * Update a payment link by ID
+ * PATCH /payment-link/:id
+ * Update local metadata (url, status, expiresAt) for a payment link.
  */
 export const updatePaymentLinkController = async (
   req: Request,
@@ -96,7 +128,7 @@ export const updatePaymentLinkController = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const id  = req.params.id as string;
+    const id = req.params.id as string;
     const { data, error } = UpdatePaymentLinkSchema.safeParse(req.body);
     if (error) {
       res.status(400).json({ status: "failed", service: "payment-link | update", error: error.issues });
@@ -117,8 +149,8 @@ export const updatePaymentLinkController = async (
 };
 
 /*
- * DELETE /:id
- * Delete a payment link by ID
+ * DELETE /payment-link/:id
+ * Delete a payment link record (local DB only).
  */
 export const deletePaymentLinkController = async (
   req: Request,

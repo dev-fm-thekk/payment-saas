@@ -275,16 +275,27 @@ export const swaggerDocument = {
     // ─── WEBHOOK ───────────────────────────────────────────
     '/webhook': {
       post: {
-        summary: 'Create Webhook Endpoint', tags: ['Webhook'],
+        summary: 'Create Webhook Endpoint', tags: ['Webhook'], security: [{ bearerAuth: [] }],
+        description: 'Registers a new webhook on the payment provider and creates a local receive endpoint. The local URL is auto-generated and registered with the provider via the adapter.',
         requestBody: {
           required: true,
           content: {
-            'application/x-www-form-urlencoded': {
-              schema: { type: 'object', properties: { companyId: { type: 'string' }, provider: { type: 'string' } }, required: ['companyId', 'provider'] }
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['providerId', 'companyId', 'events'],
+                properties: {
+                  providerId: { type: 'string', format: 'uuid', description: 'ID of the connected provider row' },
+                  companyId: { type: 'string', format: 'uuid', description: 'ID of the company' },
+                  events: { type: 'array', items: { type: 'string' }, description: 'Provider event names to subscribe to', example: ['payment.captured', 'refund.created'] },
+                  alert_email: { type: 'string', format: 'email', description: 'Email for provider failure alerts (optional)' },
+                  accountId: { type: 'string', description: 'Razorpay sub-account ID (optional)' },
+                }
+              }
             }
           }
         },
-        responses: { '201': { description: 'Success' }, '400': { description: 'Bad Request' }, '500': { description: 'Internal Server Error' } }
+        responses: { '201': { description: 'Webhook registered on provider and local endpoint created' }, '400': { description: 'Validation error' }, '404': { description: 'Provider not found' }, '500': { description: 'Internal Server Error' } }
       }
     },
     '/webhook/{companyId}/{provider}/{secret}': {
@@ -351,17 +362,33 @@ export const swaggerDocument = {
     '/payment-link': {
       post: {
         summary: 'Create Payment Link', tags: ['Payment Link'], security: [{ bearerAuth: [] }],
+        description: 'Calls the resolved payment provider adapter to generate a real payment link, then persists the resulting URL.',
         requestBody: {
           required: true,
           content: {
             'application/json': {
               schema: {
                 type: 'object',
-                required: ['companyId', 'provider', 'url', 'expiresAt'],
+                required: ['providerId', 'companyId', 'amount', 'currency', 'callback_url'],
                 properties: {
-                  companyId: { type: 'string', format: 'uuid' },
-                  provider: { type: 'string', example: 'razorpay' },
-                  url: { type: 'string', format: 'uri' },
+                  providerId: { type: 'string', format: 'uuid', description: 'ID of the connected provider row' },
+                  companyId: { type: 'string', format: 'uuid', description: 'ID of the company' },
+                  amount: { type: 'integer', description: 'Amount in smallest currency unit (paise / cents)', example: 50000 },
+                  currency: { type: 'string', example: 'INR' },
+                  description: { type: 'string' },
+                  callback_url: { type: 'string', format: 'uri', description: 'URL to redirect after payment' },
+                  callback_method: { type: 'string', example: 'get' },
+                  upi_link: { type: 'boolean', description: 'Razorpay: create UPI-only link' },
+                  metadata: { type: 'object', additionalProperties: { type: 'string' } },
+                  customer: {
+                    type: 'object',
+                    properties: {
+                      name: { type: 'string' },
+                      email: { type: 'string', format: 'email' },
+                      contact: { type: 'string' },
+                    },
+                    required: ['name', 'email', 'contact'],
+                  },
                   expiresAt: { type: 'string', format: 'date-time' },
                 }
               }
@@ -369,8 +396,9 @@ export const swaggerDocument = {
           }
         },
         responses: {
-          '201': { description: 'Payment link created successfully' },
+          '201': { description: 'Payment link created on provider and record saved' },
           '400': { description: 'Validation error' },
+          '404': { description: 'Provider not found' },
           '500': { description: 'Internal Server Error' }
         }
       }
@@ -425,6 +453,102 @@ export const swaggerDocument = {
         responses: {
           '200': { description: 'Deleted payment link record' },
           '404': { description: 'Payment link not found' },
+          '500': { description: 'Internal Server Error' }
+        }
+      }
+    },
+
+    // ─── PROVIDER ──────────────────────────────────────────
+    '/provider': {
+      post: {
+        summary: 'Create Provider', tags: ['Provider'], security: [{ bearerAuth: [] }],
+        description: 'Connect a payment provider (razorpay, stripe, or paypal) to a company. Each company may have at most one instance of each provider type.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['companyId', 'type', 'credentials'],
+                properties: {
+                  companyId: { type: 'string', format: 'uuid', description: 'UUID of the company' },
+                  type: { type: 'string', enum: ['razorpay', 'stripe', 'paypal'], description: 'Payment provider type' },
+                  credentials: {
+                    type: 'object',
+                    description: 'Provider-specific credentials (e.g. API keys, secrets)',
+                    additionalProperties: true,
+                    example: { keyId: 'rzp_live_xxx', keySecret: 'yyy' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          '201': { description: 'Provider connected successfully' },
+          '400': { description: 'Validation error' },
+          '409': { description: 'Provider of this type already exists for the company' },
+          '500': { description: 'Internal Server Error' }
+        }
+      }
+    },
+    '/provider/company/{companyId}': {
+      get: {
+        summary: 'List Providers by Company', tags: ['Provider'], security: [{ bearerAuth: [] }],
+        description: 'Returns all payment providers connected to a given company.',
+        parameters: [{ name: 'companyId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' }, description: 'UUID of the company' }],
+        responses: {
+          '200': { description: 'List of providers for the company' },
+          '500': { description: 'Internal Server Error' }
+        }
+      }
+    },
+    '/provider/{id}': {
+      get: {
+        summary: 'Get Provider', tags: ['Provider'], security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        responses: {
+          '200': { description: 'Provider details' },
+          '404': { description: 'Provider not found' },
+          '500': { description: 'Internal Server Error' }
+        }
+      },
+      patch: {
+        summary: 'Update Provider Credentials', tags: ['Provider'], security: [{ bearerAuth: [] }],
+        description: 'Update the stored credentials for a connected provider.',
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  credentials: {
+                    type: 'object',
+                    additionalProperties: true,
+                    description: 'Updated provider-specific credentials',
+                    example: { keyId: 'rzp_live_zzz', keySecret: 'aaa' }
+                  }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          '200': { description: 'Updated provider record' },
+          '400': { description: 'Validation error' },
+          '404': { description: 'Provider not found' },
+          '500': { description: 'Internal Server Error' }
+        }
+      },
+      delete: {
+        summary: 'Delete Provider', tags: ['Provider'], security: [{ bearerAuth: [] }],
+        description: 'Disconnect and remove a payment provider from a company.',
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+        responses: {
+          '200': { description: 'Deleted provider record' },
+          '404': { description: 'Provider not found' },
           '500': { description: 'Internal Server Error' }
         }
       }
