@@ -1,139 +1,139 @@
-import z from "zod";
+import { z } from "zod";
+import type { Request, Response, NextFunction } from "express";
 import {
   checkCompanyExists,
-  checkProviderExists,
   createWebhook,
   fetchWebhookEndpoints,
   fetchWebhookEvents,
   handleWebhook,
-} from "./webhook.helper";
+} from "./webhook.helper.js";
 
-const WebhookSchema = z.object({
-  id: z.string(),
-  companyId: z.string(),
-  provider: z.string(),
-  url: z.string(),
-  createdAt: z.string(),
+// ─── Schemas ──────────────────────────────────────────────────────────────────
+
+const CreateWebhookSchema = z.object({
+  /** ID of the row in the providers table */
+  providerId: z.string().uuid("providerId must be a valid UUID"),
+  companyId: z.string().uuid("companyId must be a valid UUID"),
+  /** Provider event names to subscribe to */
+  events: z.array(z.string()).min(1, "At least one event is required"),
+  alert_email: z.string().email().optional(),
+  /** Razorpay: sub-account ID */
+  accountId: z.string().optional(),
 });
 
-const CreateWebhookSchema = WebhookSchema.omit({
-  id: true,
-  url: true,
-  createdAt: true,
-});
+// ─── Controllers ──────────────────────────────────────────────────────────────
 
-export const createWebhookController = async (req: any, res: any) => {
+/*
+ * POST /webhook
+ * Registers a new webhook on the payment provider and creates a local endpoint record.
+ */
+export const createWebhookController = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   const { data, error } = CreateWebhookSchema.safeParse(req.body);
 
-  if (error)
-    return res.status(400).send({
-      service: "webhook | create",
-      status: "failed",
-      error: error.message,
-    });
+  if (error) {
+    res.status(400).json({ status: "failed", service: "webhook | create", error: error.issues });
+    return;
+  }
 
   const host = req.get("host");
-  const baseUrl = `${host}/api/v1`;
+  const protocol = req.protocol;
+  const baseUrl = `${protocol}://${host}/api/v1`;
+
   try {
     const response = await createWebhook(data, baseUrl);
-    return res.status(201).send({
-      status: "success",
-      service: "webhook | create",
-      data: response,
-    });
-  } catch (err) {
-    return res.status(500).send({
-      service: "webhook | create",
-      status: "failed",
-      error: err,
-    });
+    res.status(201).json({ status: "success", service: "webhook | create", data: response });
+  } catch (err: any) {
+    if (err?.statusCode) {
+      res.status(err.statusCode).json({ status: "failed", service: "webhook | create", error: err.message });
+      return;
+    }
+    next(err);
   }
 };
 
-export const webhookHandler = async (req: any, res: any) => {
+/*
+ * POST /webhook/:companyId/:provider/:secret
+ * Receives inbound webhook events from the payment provider.
+ * No auth required — this URL is called by the provider.
+ */
+export const webhookHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   const { protocol, originalUrl } = req;
   const host = req.get("host");
+  const webhookEndpoint = `${protocol}://${host}${originalUrl}`;
 
-  let webhookEndpoint = `${protocol}://${host}${originalUrl}`;
-
-  let input = {
-    payload: req.body,
-    received_at: new Date().toString(),
-    webhookEndpoint,
-  };
   try {
     console.log(`[Webhook] Received payload for endpoint: ${webhookEndpoint}`);
-    const response = await handleWebhook(input);
+
+    const response = await handleWebhook({
+      payload: req.body,
+      received_at: new Date().toISOString(),
+      webhookEndpoint,
+    });
 
     if (response === "WEBHOOK_ENDPOINT_NOT_FOUND") {
-      console.error(
-        `[Webhook] Error: Webhook endpoint not found for URL ${webhookEndpoint}`,
-      );
-      return res.status(404).send({
-        service: "webhook | manager",
+      console.error(`[Webhook] Endpoint not found for URL: ${webhookEndpoint}`);
+      res.status(404).json({
         status: "failed",
+        service: "webhook | handler",
         error: "Webhook endpoint not found",
       });
+      return;
     }
 
-    return res.status(201).send(response);
+    res.status(201).json({ status: "success", service: "webhook | handler", data: response });
   } catch (err) {
-    console.error(`[Webhook] DB Insertion or Processing Error:`, err);
-    return res.status(500).send({
-      service: "webhook | manager",
-      status: "failed",
-      error: err instanceof Error ? err.message : err,
-    });
+    next(err);
   }
 };
 
-export const getWebhookEndpoints = async (req: any, res: any) => {
+/*
+ * GET /webhook/:companyId/:provider
+ * Lists all webhook endpoints for a given company + provider.
+ */
+export const getWebhookEndpoints = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   const { companyId, provider } = req.params;
 
   const companyExists = await checkCompanyExists(companyId);
-
-  if (!companyExists)
-    return res.status(400).send({
-      service: "webhook | fetch",
-      status: "failed",
-      error: "company not found",
-    });
-
-  const providerExists = await checkProviderExists(provider);
-
-  if (!providerExists)
-    return res.status(400).send({
-      service: "webhook | fetch",
-      status: "failed",
-      error: "provider not found",
-    });
+  if (!companyExists) {
+    res.status(404).json({ status: "failed", service: "webhook | fetch", error: "Company not found" });
+    return;
+  }
 
   try {
     const response = await fetchWebhookEndpoints(companyId, provider);
-    return res.status(200).send(response);
+    res.status(200).json({ status: "success", service: "webhook | fetch", data: response });
   } catch (err) {
-    console.error(`[Webhook] DB selection error ${err}`);
-    return res.status(500).send({
-      service: "webhook | fetch",
-      status: "failed",
-      error: err instanceof Error ? err.message : err,
-    });
+    next(err);
   }
 };
 
-export const getWebhookEventLogs = async (req: any, res: any) => {
+/*
+ * GET /webhook/event/logs/:webhookEndpointId
+ * Returns normalised event logs for a specific webhook endpoint.
+ */
+export const getWebhookEventLogs = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
   const { webhookEndpointId } = req.params;
-  
+
   try {
     const response = await fetchWebhookEvents(webhookEndpointId);
-
-    return res.status(200).send(response);
+    res.status(200).json({ status: "success", service: "webhook | logs", data: response });
   } catch (err) {
-    console.error(`[Webhook] DB selection error ${err}`);
-    return res.status(500).send({
-      service: "webhook | fetch",
-      status: "failed",
-      error: err instanceof Error ? err.message : err,
-    });
+    next(err);
   }
 };

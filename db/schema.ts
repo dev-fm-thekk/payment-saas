@@ -119,3 +119,16 @@ export const notifications = pgTable("notifications", {
 }, (table) => [
 	check("notifications_status_check", sql`(status = ANY (ARRAY['pending'::text, 'sent'::text, 'failed'::text]))`),
 ]);
+
+export const providers = pgTable("providers", {
+	id: uuid().defaultRandom().primaryKey(),
+	companyId: uuid("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+	type: text().notNull(),
+	credentials: jsonb().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true }).default(sql`now()`).notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true }).default(sql`now()`).notNull(),
+}, (table) => [
+	index("idx_providers_company_id").using("btree", table.companyId.asc().nullsLast()),
+	unique("company_provider_type_key").on(table.companyId, table.type),
+	check("providers_type_check", sql`(type = ANY (ARRAY['razorpay'::text, 'stripe'::text, 'paypal'::text]))`),
+]);

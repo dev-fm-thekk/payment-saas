@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { Request, Response, NextFunction } from "express";
-import db from "../../../db";
-import { clients } from "../../../db/schema";
+import db from "@db";
+import { clients } from "@schema";
 import { eq } from "drizzle-orm";
 
 const createClientSchema = z.object({

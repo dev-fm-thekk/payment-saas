@@ -1,5 +1,5 @@
 import { defineRelations } from "drizzle-orm";
-import * as schema from "./schema";
+import * as schema from "@schema";
 
 export const relations = defineRelations(schema, (r) => ({
 	companies: {
@@ -8,6 +8,7 @@ export const relations = defineRelations(schema, (r) => ({
 			to: r.users.id
 		}),
 		services: r.many.services(),
+		providers: r.many.providers(),
 	},
 	clients: {
 		service: r.one.services({
@@ -60,6 +61,12 @@ export const relations = defineRelations(schema, (r) => ({
 		endpoint: r.one.webhookEndpoints({
 			from: r.webhookEvents.webhookEndpointId,
 			to: r.webhookEndpoints.id
+		}),
+	},
+	providers: {
+		company: r.one.companies({
+			from: r.providers.companyId,
+			to: r.companies.id
 		}),
 	},
 }));

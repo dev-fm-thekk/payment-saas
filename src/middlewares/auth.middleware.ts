@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
-import { verifyAccessToken } from '../../utils/hashing';
-import db from '../../db';
-import { companies } from '../../db/schema';
+import { verifyAccessToken } from '@utils/hashing';
+import db from '@db';
+import { companies } from '@schema';
 import { eq } from 'drizzle-orm';
 
 export interface AuthRequest extends Request {

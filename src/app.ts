@@ -10,6 +10,7 @@ import InvoiceRouter from './routes/invoice.route';
 import ClientRouter from './routes/client.route';
 import paymentLinkRouter from './routes/payment-link.route';
 import notificationRouter from './routes/notification.route';
+import providerRouter from './routes/provider.route';
 import cookieParser from 'cookie-parser';
 
 import cors from 'cors';
@@ -37,6 +38,7 @@ appV1.use('/webhook', webhookRouter);
 appV1.use('/invoice', InvoiceRouter);
 appV1.use('/client', ClientRouter);
 appV1.use('/payment-link', paymentLinkRouter);
+appV1.use('/provider', providerRouter);
 
 
 app.use('/api/v1', appV1);
