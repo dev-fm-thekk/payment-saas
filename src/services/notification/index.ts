@@ -1,7 +1,10 @@
 import nodemailer from "nodemailer";
-import vars from "@configs";
 import logger from "@services/logging/logging.service";
 import type SMTPTransport from "nodemailer/lib/smtp-transport";
+
+import dotenv from 'dotenv'
+
+dotenv.config();
 
 const transport = nodemailer.createTransport({
   host: "smtp.gmail.com",
@@ -10,7 +13,7 @@ const transport = nodemailer.createTransport({
   family: 4,
   auth: {
     user: "abhiramajithr@gmail.com",
-    pass: vars.GOOGLE_APP_PASSWORD,
+    pass: process.env.GOOGLE_APP_PASSWORD,
   },
 } as SMTPTransport.Options);
 
