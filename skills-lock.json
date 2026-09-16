@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "courier": {
+      "source": "trycourier/courier-skills",
+      "sourceType": "github",
+      "skillPath": "skills/courier/SKILL.md",
+      "computedHash": "4138688de4379d6ef614afd37322688385f0dce441957be8ec145460392f7489"
+    }
+  }
+}

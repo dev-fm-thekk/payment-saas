@@ -92,7 +92,7 @@ export const deleteInvoiceById = async (id: string) => {
 };
 
 import { notifications, paymentLinks } from "@schema";
-import { sendNotificationEmail } from "@services/notification/index";
+import { sendInvoiceNotification } from "@services/notification/index";
 
 export const notifyInvoiceById = async (id: string, userId: string) => {
   const invoice = await getInvoiceById(id);
@@ -130,7 +130,18 @@ export const notifyInvoiceById = async (id: string, userId: string) => {
   body += `\nThank you!`;
 
   try {
-    await sendNotificationEmail(to, subject, body);
+    await sendInvoiceNotification(
+      to,
+      {
+        clientName: client[0]!.name,
+        invoiceNumber: invoice.invoiceNumber,
+        amount: invoice.amount,
+        currency: invoice.currency,
+        dueDate: invoice.dueDate,
+        paymentUrl,
+      },
+      `invoice-notif-${id}`,
+    );
     
     // Log the notification
     await db.insert(notifications).values({
@@ -163,4 +174,5 @@ export const notifyInvoiceById = async (id: string, userId: string) => {
     return "EMAIL_FAILED";
   }
 };
+
 

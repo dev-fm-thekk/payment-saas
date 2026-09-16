@@ -6,6 +6,7 @@
       "name": "payment-sdk",
       "dependencies": {
         "@neondatabase/serverless": "^1.1.0",
+        "@trycourier/courier": "^9.6.0",
         "@types/bcrypt": "^6.0.0",
         "@types/cors": "^2.8.19",
         "@types/jsonwebtoken": "^9.0.10",
@@ -146,6 +147,8 @@
     "@so-ric/colorspace": ["@so-ric/colorspace@1.1.6", "", { "dependencies": { "color": "^5.0.2", "text-hex": "1.0.x" } }, "sha512-/KiKkpHNOBgkFJwu9sh48LkHSMYGyuTcSFK/qMBdnOAlrRJzRSXAOFB5qwzaVQuDl8wAvHVMkaASQDReTahxuw=="],
 
     "@standard-schema/spec": ["@standard-schema/spec@1.1.0", "", {}, "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="],
+
+    "@trycourier/courier": ["@trycourier/courier@9.6.0", "", {}, "sha512-86pjdu/oSx2+781QDHsu2n64vE2CJT8tgFr8aZSrvrHK7BldsUMtpKIkNrQy5P0hhRzVnQo881uyEDSEcg75lg=="],
 
     "@types/bcrypt": ["@types/bcrypt@6.0.0", "", { "dependencies": { "@types/node": "*" } }, "sha512-/oJGukuH3D2+D+3H4JWLaAsJ/ji86dhRidzZ/Od7H/i8g+aCmvkeCc6Ni/f9uxGLSQVCRZkX2/lqEFG2BvWtlQ=="],
 

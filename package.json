@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
+    "@trycourier/courier": "^9.6.0",
     "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/jsonwebtoken": "^9.0.10",
