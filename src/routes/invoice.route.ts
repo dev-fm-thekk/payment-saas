@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticate } from "../middlewares/auth.middleware";
+import { authenticate } from "@middlewares/auth.middleware";
 import {
   createInvoiceController,
   getInvoiceController,
@@ -7,7 +7,7 @@ import {
   updateInvoiceController,
   deleteInvoiceController,
   notifyInvoiceController,
-} from "../controllers/Invoice/invoice.controller";
+} from "@controllers/Invoice/invoice.controller";
 
 const router = Router();
 

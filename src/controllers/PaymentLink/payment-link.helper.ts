@@ -1,8 +1,8 @@
-import db from "../../../db/index.js";
-import { paymentLinks } from "../../../db/schema.js";
+import db from "@db";
+import { paymentLinks } from "@schema";
 import { eq } from "drizzle-orm";
-import { resolveAdapter } from "../../lib/adapter.factory.js";
-import type { CreatePaymentLinkRequest } from "../../../core/types.js";
+import { resolveAdapter } from "@lib/adapter.factory";
+import type { CreatePaymentLinkRequest } from "@core/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

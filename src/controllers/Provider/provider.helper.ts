@@ -1,5 +1,5 @@
-import db from "../../../db";
-import { providers } from "../../../db/schema";
+import db from "@db";
+import { providers } from "@schema";
 import { eq, and } from "drizzle-orm";
 
 export type ProviderType = "razorpay" | "stripe" | "paypal";

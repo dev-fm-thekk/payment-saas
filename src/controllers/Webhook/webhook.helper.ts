@@ -1,8 +1,8 @@
 import crypto from "crypto";
-import db from "../../../db/index.js";
-import { companies, webhookEndpoints, webhookEvents } from "../../../db/schema.js";
+import db from "@db";
+import { companies, webhookEndpoints, webhookEvents } from "@schema";
 import { and, eq } from "drizzle-orm";
-import { resolveAdapter } from "../../lib/adapter.factory.js";
+import { resolveAdapter } from "@lib/adapter.factory";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

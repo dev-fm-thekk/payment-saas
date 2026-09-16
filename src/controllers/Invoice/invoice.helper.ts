@@ -1,6 +1,6 @@
 import crypto from "crypto";
-import db from "../../../db";
-import { clients, invoices } from "../../../db/schema";
+import db from "@db";
+import { clients, invoices } from "@schema";
 import { eq } from "drizzle-orm";
 
 type Invoice = {
@@ -91,8 +91,8 @@ export const deleteInvoiceById = async (id: string) => {
   return deleted ?? null;
 };
 
-import { notifications, paymentLinks } from "../../../db/schema";
-import { sendNotificationEmail } from "../../services/notification";
+import { notifications, paymentLinks } from "@schema";
+import { sendNotificationEmail } from "@services/notification/index";
 
 export const notifyInvoiceById = async (id: string, userId: string) => {
   const invoice = await getInvoiceById(id);

@@ -1,9 +1,9 @@
-import db from "../../../db";
+import db from "@db";
 import { eq } from "drizzle-orm";
-import type { CreateServiceType, UpdateServiceType, CreateUserInputType, UpdateUserInputType } from "../../../utils/schema";
-import logger from "../../services/logging/logging.service";
-import { users as UserTable } from "../../../db/schema";
-import { hashPassword } from "../../../utils/hashing";
+import type { CreateServiceType, UpdateServiceType, CreateUserInputType, UpdateUserInputType } from "@utils/schema";
+import logger from "@services/logging/logging.service";
+import { users as UserTable } from "@schema";
+import { hashPassword } from "@utils/hashing";
 
 export async function createUser(user: CreateUserInputType): Promise<CreateServiceType> {
     try {

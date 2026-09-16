@@ -1,9 +1,9 @@
-import db from "../../db/index.js";
-import { providers } from "../../db/schema.js";
+import db from "@db";
+import { providers } from "@schema";
 import { eq } from "drizzle-orm";
-import { RazorpayAdapter } from "../../core/adapters/razorpay.adapter.js";
-import { StripeAdapter } from "../../core/adapters/stripe.adapter.js";
-import type { BasePaymentProvider } from "../../core/base.js";
+import { RazorpayAdapter } from "@core/adapters/razorpay.adapter";
+import { StripeAdapter } from "@core/adapters/stripe.adapter";
+import type { BasePaymentProvider } from "@core/base";
 
 /**
  * Fetches the provider row by ID and constructs the appropriate adapter.

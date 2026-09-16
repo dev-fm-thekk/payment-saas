@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { authenticate } from "../middlewares/auth.middleware.js";
+import { authenticate } from "@middlewares/auth.middleware";
 import {
   createPaymentLinkController,
   getPaymentLinkController,
   listPaymentLinksController,
   updatePaymentLinkController,
   deletePaymentLinkController,
-} from "../controllers/PaymentLink/payment-link.controller.js";
+} from "@controllers/PaymentLink/payment-link.controller";
 
 const router = Router();
 

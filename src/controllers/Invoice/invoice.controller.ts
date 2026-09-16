@@ -6,7 +6,7 @@ import {
   listInvoicesByClient,
   updateInvoiceById,
   deleteInvoiceById,
-} from "./invoice.helper";
+} from "./invoice.helper.js";
 
 const CreateInvoiceSchema = z.object({
   title: z.string(),
@@ -157,7 +157,7 @@ export const deleteInvoiceController = async (
   }
 };
 
-import { notifyInvoiceById } from "./invoice.helper";
+import { notifyInvoiceById } from "./invoice.helper.js";
 
 /*
  * POST /notify/:id

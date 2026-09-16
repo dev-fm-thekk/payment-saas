@@ -1,15 +1,15 @@
 import { eq } from "drizzle-orm"
-import db from "../../../db"
-import { users, refreshTokens } from "../../../db/schema"
-import logger from "../../services/logging/logging.service";
-import type { ServiceReturnType, UpdateServiceType } from "../../../utils/schema"
+import db from "@db"
+import { users, refreshTokens } from "@schema"
+import logger from "@services/logging/logging.service"
+import type { ServiceReturnType, UpdateServiceType } from "@utils/schema"
 import {
     hashPassword,
     verifyPassword,
     generateAccessToken,
     generateRandomToken,
     hashToken
-} from "../../../utils/hashing"
+} from "@utils/hashing"
 
 type UserCredential = {
     email: string,
