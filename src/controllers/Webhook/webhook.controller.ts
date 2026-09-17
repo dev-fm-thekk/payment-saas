@@ -101,7 +101,8 @@ export const getWebhookEndpoints = async (
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
-  const { companyId, provider } = req.params;
+  const companyId  = req.params.companyId as string;
+  const provider = req.params.provider as string;
 
   const companyExists = await checkCompanyExists(companyId);
   if (!companyExists) {
@@ -126,7 +127,7 @@ export const getWebhookEventLogs = async (
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
-  const { webhookEndpointId } = req.params;
+  const webhookEndpointId  = req.params.webhookEndpointId as string;
 
   try {
     const response = await fetchWebhookEvents(webhookEndpointId);

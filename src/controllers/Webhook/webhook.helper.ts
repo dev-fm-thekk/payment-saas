@@ -115,6 +115,8 @@ export const processWebhookPaymentCompletion = async (
       if (notes) {
         invoiceId = notes.invoiceId || notes.invoice_id || null;
       }
+
+      console.log("Webhookk update test, Invoice id: ",invoiceId)
     } else if (normalizedProvider === "STRIPE") {
       const eventType = payload?.type;
       if (
