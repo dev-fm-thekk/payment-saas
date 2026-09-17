@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import db from "@db";
 import { clients, invoices } from "@schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 type Invoice = {
   id: string;
@@ -61,8 +61,16 @@ export const getInvoiceById = async (id: string) => {
   return invoice ?? null;
 };
 
-export const listInvoicesByClient = async (clientId: string) => {
-  return db.select().from(invoices).where(eq(invoices.clientId, clientId));
+export const listInvoicesByClient = async (clientId: string, status?: string) => {
+  const conditions = [eq(invoices.clientId, clientId)];
+  if (status) {
+    conditions.push(eq(invoices.status, status));
+  }
+  return db.select().from(invoices).where(and(...conditions));
+};
+
+export const getCompletedInvoicesByClient = async (clientId: string) => {
+  return listInvoicesByClient(clientId, "paid");
 };
 
 export const updateInvoiceById = async (id: string, input: UpdateInvoice) => {

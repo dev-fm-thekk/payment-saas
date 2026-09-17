@@ -87,7 +87,7 @@ export const getInvoiceController = async (
 
 /*
  * GET /client/:clientId
- * List all invoices for a client
+ * List all invoices for a client (optional query: ?status=paid)
  */
 export const listInvoicesController = async (
   req: Request,
@@ -96,7 +96,8 @@ export const listInvoicesController = async (
 ): Promise<void> => {
   try {
     const clientId  = req.params.clientId as string;
-    const invoiceList = await listInvoicesByClient(clientId);
+    const status = req.query.status as string | undefined;
+    const invoiceList = await listInvoicesByClient(clientId, status);
     res.status(200).json({ status: "success", service: "invoice | list", data: invoiceList });
   } catch (err) {
     next(err);

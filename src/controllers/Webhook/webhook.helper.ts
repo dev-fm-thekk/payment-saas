@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import db from "@db";
-import { companies, webhookEndpoints, webhookEvents } from "@schema";
+import { companies, webhookEndpoints, webhookEvents, invoices, paymentLinks } from "@schema";
 import { and, eq } from "drizzle-orm";
 import { resolveAdapter } from "@lib/adapter.factory";
 
@@ -77,38 +77,180 @@ export const createWebhook = async (
       url: localUrl,
     })
     .returning();
-
-  if (!record)
-    throw new Error("DB Error: unable to insert values in webhook_endpoints table");
-
-  return { record, providerResponse };
+  if (response.length < 1)
+    throw new Error(
+      "DB Error: unable to insert values in webhook_endpoints table",
+    );
+  return response;
 };
 
-/**
- * Receives an inbound webhook event (from the provider hitting our local URL),
- * matches it to the endpoint record, and stores the raw payload.
- */
-export const handleWebhook = async (input: WebhookEventInput) => {
-  const [endpoint] = await db
-    .select({ id: webhookEndpoints.id })
+export const processWebhookPaymentCompletion = async (
+  payload: any,
+  provider: string,
+) => {
+  try {
+    let invoiceId: string | null = null;
+    let paymentLinkId: string | null = null;
+    let isSuccessEvent = false;
+
+    const normalizedProvider = (provider || "").toUpperCase();
+
+    if (normalizedProvider === "RAZORPAY") {
+      const event = payload?.event;
+      if (
+        event === "payment_link.paid" ||
+        event === "payment.captured" ||
+        event === "order.paid" ||
+        event === "invoice.paid"
+      ) {
+        isSuccessEvent = true;
+      }
+
+      const pLinkEntity = payload?.payload?.payment_link?.entity;
+      const paymentEntity = payload?.payload?.payment?.entity;
+
+      if (pLinkEntity?.id) {
+        paymentLinkId = pLinkEntity.id;
+      }
+
+      const notes = pLinkEntity?.notes || paymentEntity?.notes;
+      if (notes) {
+        invoiceId = notes.invoiceId || notes.invoice_id || null;
+      }
+    } else if (normalizedProvider === "STRIPE") {
+      const eventType = payload?.type;
+      if (
+        eventType === "checkout.session.completed" ||
+        eventType === "payment_intent.succeeded" ||
+        eventType === "charge.succeeded"
+      ) {
+        isSuccessEvent = true;
+      }
+
+      const sessionObj = payload?.data?.object;
+      if (sessionObj?.payment_link) {
+        paymentLinkId = sessionObj.payment_link;
+      }
+
+      const metadata = sessionObj?.metadata;
+      if (metadata) {
+        invoiceId = metadata.invoiceId || metadata.invoice_id || null;
+      }
+      if (!invoiceId && sessionObj?.client_reference_id) {
+        invoiceId = sessionObj.client_reference_id;
+      }
+    } else {
+      const eventType = payload?.event || payload?.type;
+      if (
+        typeof eventType === "string" &&
+        (eventType.includes("paid") ||
+          eventType.includes("captured") ||
+          eventType.includes("succeeded") ||
+          eventType.includes("completed"))
+      ) {
+        isSuccessEvent = true;
+      }
+      invoiceId =
+        payload?.metadata?.invoiceId ||
+        payload?.invoiceId ||
+        payload?.invoice_id ||
+        null;
+      paymentLinkId = payload?.paymentLinkId || payload?.payment_link_id || null;
+    }
+
+    if (!isSuccessEvent) return null;
+
+    let targetInvoice = null;
+
+    if (invoiceId) {
+      const found = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.id, invoiceId))
+        .limit(1);
+      if (found.length > 0) targetInvoice = found[0];
+    }
+
+    if (!targetInvoice && paymentLinkId) {
+      const found = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.paymentLinkId, paymentLinkId))
+        .limit(1);
+      if (found.length > 0) targetInvoice = found[0];
+    }
+
+    if (!targetInvoice && paymentLinkId) {
+      const foundLink = await db
+        .select({ id: paymentLinks.id })
+        .from(paymentLinks)
+        .where(eq(paymentLinks.id, paymentLinkId))
+        .limit(1);
+
+      if (foundLink.length > 0) {
+        const found = await db
+          .select()
+          .from(invoices)
+          .where(eq(invoices.paymentLinkId, foundLink[0]!.id))
+          .limit(1);
+        if (found.length > 0) targetInvoice = found[0];
+      }
+    }
+
+    if (targetInvoice) {
+      const now = new Date();
+      await db
+        .update(invoices)
+        .set({
+          status: "paid",
+          paidAt: now,
+          updatedAt: now,
+        })
+        .where(eq(invoices.id, targetInvoice.id));
+
+      if (targetInvoice.paymentLinkId) {
+        await db
+          .update(paymentLinks)
+          .set({ status: "consumed" })
+          .where(eq(paymentLinks.id, targetInvoice.paymentLinkId));
+      }
+
+      console.log(
+        `[Webhook Processor] Invoice ${targetInvoice.id} (${targetInvoice.invoiceNumber}) marked as 'paid'`,
+      );
+      return targetInvoice.id;
+    }
+  } catch (err) {
+    console.error("[Webhook Processor] Error processing payment completion:", err);
+  }
+
+  return null;
+};
+
+export const handleWebhook = async (input: WebhookEvents) => {
+  let webhookEndpoint = await db
+    .select({ id: webhookEndpoints.id, provider: webhookEndpoints.provider })
     .from(webhookEndpoints)
     .where(eq(webhookEndpoints.url, input.webhookEndpoint))
     .limit(1);
 
   if (!endpoint) return "WEBHOOK_ENDPOINT_NOT_FOUND";
 
-  const [event] = await db
-    .insert(webhookEvents)
-    .values({
-      payload: input.payload,
-      webhookEndpointId: endpoint.id,
-    })
-    .returning();
+  let webhookEndpointId = webhookEndpoint[0]?.id as string;
+  let provider = webhookEndpoint[0]?.provider as string;
 
-  if (!event)
+  let insertData = {
+    payload: input.payload,
+    received_at: input.received_at,
+    webhookEndpointId: webhookEndpointId,
+  };
+  let response = await db.insert(webhookEvents).values(insertData).returning();
+  if (response.length < 1)
     throw new Error("DB Error: unable to insert value in webhook_events table");
 
-  return event;
+  await processWebhookPaymentCompletion(input.payload, provider);
+
+  return response;
 };
 
 export const checkCompanyExists = async (companyId: string): Promise<boolean> => {
@@ -153,9 +295,27 @@ function normalizeRazorpayPayload(log: any): NormalizedLog {
   };
 }
 
-function normalizeLogBody(logs: any, provider: string): NormalizedLog {
+function normalizeStripePayload(log: any): NormalizedLogs {
+  const obj = log?.data?.object;
+  return {
+    event: log?.type ?? "N/A",
+    amount: obj?.amount_total ?? obj?.amount ?? null,
+    currency: obj?.currency?.toUpperCase() ?? "N/A",
+    timestamp: log?.created ? new Date(log.created * 1000).toISOString() : "N/A",
+    status: obj?.payment_status ?? obj?.status ?? "N/A",
+  };
+}
+
+function normalizeLogBody(logs: any, provider: string): NormalizedLogs {
   if (provider === "RAZORPAY") return normalizeRazorpayPayload(logs);
-  return { event: "N/A", status: "N/A", amount: null, currency: "N/A", timestamp: "N/A" };
+  if (provider === "STRIPE") return normalizeStripePayload(logs);
+  return {
+    event: logs?.event ?? logs?.type ?? "N/A",
+    status: logs?.status ?? "N/A",
+    amount: logs?.amount ?? null,
+    currency: logs?.currency ?? "N/A",
+    timestamp: logs?.timestamp ?? "N/A",
+  };
 }
 
 export const fetchWebhookEvents = async (webhookEndpointId: string) => {
