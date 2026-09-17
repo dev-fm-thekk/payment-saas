@@ -19,6 +19,7 @@ export async function resolveAdapter(providerId: string): Promise<{
     .where(eq(providers.id, providerId))
     .limit(1);
 
+  console.log(provider);
   if (!provider) {
     const err = new Error(`Provider with id "${providerId}" not found`);
     (err as any).statusCode = 404;
@@ -32,8 +33,8 @@ export async function resolveAdapter(providerId: string): Promise<{
   switch (provider.type) {
     case "razorpay":
       adapter = new RazorpayAdapter({
-        apiKey: creds.apiKey!,
-        apiSecret: creds.apiSecret!,
+        apiKey: creds.keyId!,
+        apiSecret: creds.keySecret!,
       });
       break;
     case "stripe":

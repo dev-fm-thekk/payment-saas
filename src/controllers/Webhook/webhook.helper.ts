@@ -7,17 +7,15 @@ import { resolveAdapter } from "@lib/adapter.factory";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type CreateWebhookInput = {
-  /** ID of the row in the providers table */
+  /** ID of the row in the providers table used to resolve adapter credentials */
   providerId: string;
   companyId: string;
   /** Webhook events to subscribe to, e.g. ["payment.captured", "refund.created"] */
   events: string[];
   alert_email?: string;
-  /** Razorpay: sub-account ID */
-  accountId?: string;
 };
 
-type WebhookEventInput = {
+type WebhookEvents = {
   payload: any;
   received_at: string;
   webhookEndpoint: string;
@@ -59,13 +57,12 @@ export const createWebhook = async (
     baseUrl,
   );
 
-  // Register the webhook on the provider side
+  // Register the webhook on the provider side using resolved adapter
   const providerResponse = await adapter.createWebhook({
     url: localUrl,
     events: input.events,
     secret,
     alert_email: input.alert_email,
-    accountId: input.accountId,
   });
 
   // Persist the local endpoint record
@@ -77,11 +74,12 @@ export const createWebhook = async (
       url: localUrl,
     })
     .returning();
-  if (response.length < 1)
+
+  if (!record)
     throw new Error(
       "DB Error: unable to insert values in webhook_endpoints table",
     );
-  return response;
+  return { record, providerResponse };
 };
 
 export const processWebhookPaymentCompletion = async (
@@ -234,7 +232,7 @@ export const handleWebhook = async (input: WebhookEvents) => {
     .where(eq(webhookEndpoints.url, input.webhookEndpoint))
     .limit(1);
 
-  if (!endpoint) return "WEBHOOK_ENDPOINT_NOT_FOUND";
+  if (webhookEndpoint.length < 1) return "WEBHOOK_ENDPOINT_NOT_FOUND";
 
   let webhookEndpointId = webhookEndpoint[0]?.id as string;
   let provider = webhookEndpoint[0]?.provider as string;
@@ -295,7 +293,7 @@ function normalizeRazorpayPayload(log: any): NormalizedLog {
   };
 }
 
-function normalizeStripePayload(log: any): NormalizedLogs {
+function normalizeStripePayload(log: any): NormalizedLog {
   const obj = log?.data?.object;
   return {
     event: log?.type ?? "N/A",
@@ -306,7 +304,7 @@ function normalizeStripePayload(log: any): NormalizedLogs {
   };
 }
 
-function normalizeLogBody(logs: any, provider: string): NormalizedLogs {
+function normalizeLogBody(logs: any, provider: string): NormalizedLog {
   if (provider === "RAZORPAY") return normalizeRazorpayPayload(logs);
   if (provider === "STRIPE") return normalizeStripePayload(logs);
   return {

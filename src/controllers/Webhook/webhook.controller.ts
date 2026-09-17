@@ -11,14 +11,12 @@ import {
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
 const CreateWebhookSchema = z.object({
-  /** ID of the row in the providers table */
+  /** ID of the row in the providers table used to resolve adapter credentials */
   providerId: z.string().uuid("providerId must be a valid UUID"),
   companyId: z.string().uuid("companyId must be a valid UUID"),
   /** Provider event names to subscribe to */
   events: z.array(z.string()).min(1, "At least one event is required"),
   alert_email: z.string().email().optional(),
-  /** Razorpay: sub-account ID */
-  accountId: z.string().optional(),
 });
 
 // ─── Controllers ──────────────────────────────────────────────────────────────

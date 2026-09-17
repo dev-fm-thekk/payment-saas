@@ -10,26 +10,15 @@ import {
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
-const CustomerSchema = z.object({
-  name: z.string(),
-  email: z.string().email(),
-  contact: z.string(),
-});
-
 const CreatePaymentLinkSchema = z.object({
-  /** ID of the row in the providers table */
-  providerId: z.string().uuid("providerId must be a valid UUID"),
-  companyId: z.string().uuid("companyId must be a valid UUID"),
-  /** Fields forwarded directly to the adapter */
+  provider: z.string().optional(),
+  providerId: z.string().optional(),
+  company: z.string().optional(),
+  companyId: z.string().optional(),
   amount: z.number().int().positive(),
   currency: z.string(),
-  description: z.string().optional(),
-  callback_url: z.string().url(),
-  callback_method: z.string().optional(),
   upi_link: z.boolean().optional(),
-  metadata: z.record(z.string()).optional(),
-  customer: CustomerSchema.optional(),
-  expiresAt: z.string().or(z.date()).optional(),
+  description: z.string().optional(),
 });
 
 const UpdatePaymentLinkSchema = z.object({
@@ -42,8 +31,8 @@ const UpdatePaymentLinkSchema = z.object({
 
 /*
  * POST /payment-link
- * Calls the resolved provider adapter to create a real payment link, then
- * saves the resulting URL in the payment_links table.
+ * Essential fields: provider, company (or companyId), currency, amount, upi_link, description.
+ * callback_url, callback_method, and metadata are internalized.
  */
 export const createPaymentLinkController = async (
   req: Request,
@@ -57,13 +46,43 @@ export const createPaymentLinkController = async (
       return;
     }
 
-    const { providerId, companyId, expiresAt, ...linkRequest } = data;
+    const companyId = data.companyId || data.company;
+    const providerId = data.providerId || data.provider;
+
+    if (!companyId || !providerId) {
+      res.status(400).json({
+        status: "failed",
+        service: "payment-link | create",
+        error: "Both provider (or providerId) and company (or companyId) are required.",
+      });
+      return;
+    }
+
+    const host = req.get("host") || "localhost";
+    const protocol = req.protocol || "http";
+    const defaultCallbackUrl = `${protocol}://${host}/api/v1/payment-link/callback`;
+
+    // Internalized callback and metadata
+    const linkRequest: any = {
+      amount: data.amount,
+      currency: data.currency,
+      description: data.description,
+      upi_link: data.upi_link ?? false,
+      callback_url: defaultCallbackUrl,
+      callback_method: "get",
+      metadata: {
+        companyId,
+        provider: providerId,
+        created_at: new Date().toISOString(),
+      },
+    };
+
+    console.log(linkRequest);
 
     const response = await createPaymentLink({
       providerId,
       companyId,
       linkRequest,
-      expiresAt,
     });
 
     res.status(201).json({ status: "success", service: "payment-link | create", data: response });

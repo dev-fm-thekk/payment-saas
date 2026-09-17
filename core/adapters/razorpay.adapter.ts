@@ -47,7 +47,7 @@ export class RazorpayAdapter extends BasePaymentProvider {
         callback_method: request.callback_method ?? 'get',
         upi_link: request.upi_link ?? false,
         notes: request.metadata,
-        customer: request.customer!,
+        ...(request.customer ? { customer: request.customer } : {}),
         notify: {
           email: false,
           sms: false,
@@ -85,13 +85,7 @@ export class RazorpayAdapter extends BasePaymentProvider {
         ),
       } as Webhooks.RazorpayWebhookCreateRequestBody;
 
-      let raw: any;
-      if (request.accountId) {
-        raw = await this.client.webhooks.create(payload, request.accountId);
-      } else {
-        raw = await this.client.webhooks.create(payload);
-      }
-
+      const raw = await this.client.webhooks.create(payload);
       return this.normaliseWebhook(raw);
     } catch (err) {
       throw this.mapError(err);
@@ -103,10 +97,9 @@ export class RazorpayAdapter extends BasePaymentProvider {
    */
   async fetchWebhook(
     webhookId: string,
-    accountId?: string,
   ): Promise<CreateWebhookResponse> {
     try {
-      const raw = await this.client.webhooks.fetch(webhookId, accountId ?? '');
+      const raw = await this.client.webhooks.fetch(webhookId, '');
       return this.normaliseWebhook(raw);
     } catch (err) {
       throw this.mapError(err);
@@ -135,19 +128,10 @@ export class RazorpayAdapter extends BasePaymentProvider {
         );
       }
 
-      let raw: any;
-      if (request.accountId) {
-        raw = await (this.client.webhooks as any).edit(
-          payload,
-          request.webhookId,
-          request.accountId,
-        );
-      } else {
-        raw = await (this.client.webhooks as any).edit(
-          payload,
-          request.webhookId,
-        );
-      }
+      const raw = await (this.client.webhooks as any).edit(
+        payload,
+        request.webhookId,
+      );
 
       return this.normaliseWebhook(raw);
     } catch (err) {
@@ -162,23 +146,13 @@ export class RazorpayAdapter extends BasePaymentProvider {
    */
   async deleteWebhook(
     webhookId: string,
-    accountId?: string,
   ): Promise<{ deleted: boolean }> {
     try {
       if (typeof (this.client.webhooks as any).delete === 'function') {
-        await (this.client.webhooks as any).delete(webhookId, accountId);
+        await (this.client.webhooks as any).delete(webhookId);
       } else {
-        // Deactivate by setting active to false
         const updatePayload = { active: false };
-        if (accountId) {
-          await (this.client.webhooks as any).edit(
-            updatePayload,
-            webhookId,
-            accountId,
-          );
-        } else {
-          await (this.client.webhooks as any).edit(updatePayload, webhookId);
-        }
+        await (this.client.webhooks as any).edit(updatePayload, webhookId);
       }
       return { deleted: true };
     } catch (err) {

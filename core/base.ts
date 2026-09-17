@@ -40,7 +40,6 @@ export abstract class BasePaymentProvider {
 
   abstract fetchWebhook(
     webhookId: string,
-    accountId?: string,
   ): Promise<CreateWebhookResponse>;
 
   abstract updateWebhook(
@@ -49,7 +48,6 @@ export abstract class BasePaymentProvider {
 
   abstract deleteWebhook(
     webhookId: string,
-    accountId?: string,
   ): Promise<{ deleted: boolean }>;
 
   /** Verifies the authenticity of an incoming webhook payload from the provider. */

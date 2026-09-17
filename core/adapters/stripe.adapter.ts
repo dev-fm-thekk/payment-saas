@@ -99,7 +99,6 @@ export class StripeAdapter extends BasePaymentProvider {
    */
   async fetchWebhook(
     webhookId: string,
-    _accountId?: string,
   ): Promise<CreateWebhookResponse> {
     try {
       const endpoint = await this.client.webhookEndpoints.retrieve(webhookId);
@@ -138,7 +137,6 @@ export class StripeAdapter extends BasePaymentProvider {
    */
   async deleteWebhook(
     webhookId: string,
-    _accountId?: string,
   ): Promise<{ deleted: boolean }> {
     try {
       const deleted = await this.client.webhookEndpoints.del(webhookId);

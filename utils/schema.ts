@@ -180,28 +180,23 @@ export type ListTransactionsRequestType = z.infer<typeof ListTransactionsRequest
 
 /** Schema for registering a new webhook with a payment provider. */
 export const CreateWebhookSchema = z.object({
-  serviceId: z.uuid(),
+  serviceId: z.string(),
   url: z.string().url(),
   events: z.array(z.string().min(1)).min(1, 'At least one event is required'),
   secret: z.string().optional(),
   alert_email: z.string().email().optional(),
-  /** Razorpay only: account_id to scope the webhook */
-  accountId: z.string().optional(),
 });
 
 /** Schema for fetching a single webhook by its provider ID. */
 export const GetWebhookSchema = z.object({
-  serviceId: z.uuid(),
+  serviceId: z.string(),
   webhookId: z.string().min(1),
-  /** Razorpay only */
-  accountId: z.string().optional(),
 });
 
 /** Schema for updating an existing webhook. */
 export const UpdateWebhookSchema = z.object({
-  serviceId: z.uuid(),
+  serviceId: z.string(),
   webhookId: z.string().min(1),
-  accountId: z.string().optional(),
   url: z.string().url().optional(),
   events: z.array(z.string().min(1)).optional(),
   secret: z.string().optional(),
@@ -210,9 +205,8 @@ export const UpdateWebhookSchema = z.object({
 
 /** Schema for deleting a webhook. */
 export const DeleteWebhookSchema = z.object({
-  serviceId: z.uuid(),
+  serviceId: z.string(),
   webhookId: z.string().min(1),
-  accountId: z.string().optional(),
 });
 
 export type CreateWebhookType = z.infer<typeof CreateWebhookSchema>;
@@ -235,20 +229,16 @@ export const ItemSchema = z.object({
 });
 
 export const CreatePaymentLinkSchema = z.object({
-  serviceId: z.uuid(),
+  provider: z.string().optional(),
+  company: z.string().optional(),
   amount: z.number().positive(),
   currency: z.string().length(3),
-  callback_url: z.string().url(),
-  description: z.string().optional(),
-  callback_method: z.enum(['get', 'post']).optional(),
   upi_link: z.boolean().optional(),
-  metadata: z.record(z.string(), z.string()).optional(),
-  customer: CustomerSchema.optional(),
-  items: z.array(ItemSchema).optional(),
+  description: z.string().optional(),
 });
 
 export const GetPaymentLinkSchema = z.object({
-  serviceId: z.uuid(),
+  serviceId: z.string().min(1),
   linkId: z.string().min(1),
 });
 

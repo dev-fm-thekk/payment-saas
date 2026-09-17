@@ -79,13 +79,10 @@ export interface CreateWebhookRequest {
   events: string[];
   secret?: string;
   alert_email?: string;
-  /** Razorpay: scope webhook to a specific sub-account */
-  accountId?: string;
 }
 
 export interface UpdateWebhookRequest {
   webhookId: string;
-  accountId?: string;
   url?: string;
   events?: string[];
   secret?: string;

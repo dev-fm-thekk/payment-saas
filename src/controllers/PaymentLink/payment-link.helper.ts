@@ -30,6 +30,7 @@ type UpdatePaymentLink = Partial<{
 export const createPaymentLink = async (input: CreatePaymentLinkInput) => {
   const { adapter, provider } = await resolveAdapter(input.providerId);
 
+  console.log(adapter, provider);
   // Call the provider API
   const providerResponse = await adapter.createPaymentLink(input.linkRequest);
 

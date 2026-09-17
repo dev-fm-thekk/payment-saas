@@ -204,7 +204,10 @@ export const swaggerDocument = {
     '/invoice/client/{clientId}': {
       get: {
         summary: 'List Invoices by Client', tags: ['Invoice'], security: [{ bearerAuth: [] }],
-        parameters: [{ name: 'clientId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' }, description: 'UUID of the client' }],
+        parameters: [
+          { name: 'clientId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' }, description: 'UUID of the client' },
+          { name: 'status', in: 'query', required: false, schema: { type: 'string', enum: ['draft', 'pending', 'paid', 'failed', 'expired'] }, description: 'Filter invoices by status (e.g. paid)' }
+        ],
         responses: {
           '200': { description: 'List of invoices for the client' },
           '500': { description: 'Internal Server Error' }
@@ -289,7 +292,6 @@ export const swaggerDocument = {
                   companyId: { type: 'string', format: 'uuid', description: 'ID of the company' },
                   events: { type: 'array', items: { type: 'string' }, description: 'Provider event names to subscribe to', example: ['payment.captured', 'refund.created'] },
                   alert_email: { type: 'string', format: 'email', description: 'Email for provider failure alerts (optional)' },
-                  accountId: { type: 'string', description: 'Razorpay sub-account ID (optional)' },
                 }
               }
             }
@@ -301,7 +303,7 @@ export const swaggerDocument = {
     '/webhook/{companyId}/{provider}/{secret}': {
       post: {
         summary: 'Receive Webhook Event', tags: ['Webhook'],
-        description: 'Accepts incoming payment-provider events. No auth required.',
+        description: 'Accepts incoming payment-provider events. Automatically processes payment completion events (Razorpay, Stripe) to update matching invoice status to paid.',
         parameters: [
           { name: 'companyId', in: 'path', required: true, schema: { type: 'string' } },
           { name: 'provider', in: 'path', required: true, schema: { type: 'string' } },
@@ -320,7 +322,7 @@ export const swaggerDocument = {
           }
         },
         responses: {
-          '201': { description: 'Event acknowledged (success or ignored)' },
+          '201': { description: 'Event acknowledged and processed' },
           '404': { description: 'Webhook endpoint not found' },
           '500': { description: 'Processing Error' }
         }
@@ -362,34 +364,23 @@ export const swaggerDocument = {
     '/payment-link': {
       post: {
         summary: 'Create Payment Link', tags: ['Payment Link'], security: [{ bearerAuth: [] }],
-        description: 'Calls the resolved payment provider adapter to generate a real payment link, then persists the resulting URL.',
+        description: 'Creates a payment link with essential fields. Callback URL, callback method, and metadata are automatically internalized.',
         requestBody: {
           required: true,
           content: {
             'application/json': {
               schema: {
                 type: 'object',
-                required: ['providerId', 'companyId', 'amount', 'currency', 'callback_url'],
+                required: ['amount', 'currency'],
                 properties: {
-                  providerId: { type: 'string', format: 'uuid', description: 'ID of the connected provider row' },
+                  provider: { type: 'string', description: 'Provider name or ID (e.g. stripe, razorpay)' },
+                  providerId: { type: 'string', format: 'uuid', description: 'ID of the connected provider' },
+                  company: { type: 'string', format: 'uuid', description: 'ID of the company' },
                   companyId: { type: 'string', format: 'uuid', description: 'ID of the company' },
                   amount: { type: 'integer', description: 'Amount in smallest currency unit (paise / cents)', example: 50000 },
                   currency: { type: 'string', example: 'INR' },
-                  description: { type: 'string' },
-                  callback_url: { type: 'string', format: 'uri', description: 'URL to redirect after payment' },
-                  callback_method: { type: 'string', example: 'get' },
                   upi_link: { type: 'boolean', description: 'Razorpay: create UPI-only link' },
-                  metadata: { type: 'object', additionalProperties: { type: 'string' } },
-                  customer: {
-                    type: 'object',
-                    properties: {
-                      name: { type: 'string' },
-                      email: { type: 'string', format: 'email' },
-                      contact: { type: 'string' },
-                    },
-                    required: ['name', 'email', 'contact'],
-                  },
-                  expiresAt: { type: 'string', format: 'date-time' },
+                  description: { type: 'string', description: 'Payment link description' },
                 }
               }
             }

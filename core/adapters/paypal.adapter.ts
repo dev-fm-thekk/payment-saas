@@ -24,7 +24,6 @@ export class PaypalAdapter extends BasePaymentProvider {
 
   async fetchWebhook(
     _webhookId: string,
-    _accountId?: string,
   ): Promise<CreateWebhookResponse> {
     throw new Error('PayPal adapter: fetchWebhook not yet implemented');
   }
@@ -37,7 +36,6 @@ export class PaypalAdapter extends BasePaymentProvider {
 
   async deleteWebhook(
     _webhookId: string,
-    _accountId?: string,
   ): Promise<{ deleted: boolean }> {
     throw new Error('PayPal adapter: deleteWebhook not yet implemented');
   }
