@@ -77,8 +77,6 @@ export const createPaymentLinkController = async (
       },
     };
 
-    console.log(linkRequest);
-
     const response = await createPaymentLink({
       providerId,
       companyId,

@@ -89,6 +89,7 @@ export const processWebhookPaymentCompletion = async (
   try {
     let invoiceId: string | null = null;
     let paymentLinkId: string | null = null;
+    let localPaymentLinkId: string | null = null;
     let isSuccessEvent = false;
 
     const normalizedProvider = (provider || "").toUpperCase();
@@ -114,6 +115,7 @@ export const processWebhookPaymentCompletion = async (
       const notes = pLinkEntity?.notes || paymentEntity?.notes;
       if (notes) {
         invoiceId = notes.invoiceId || notes.invoice_id || null;
+        localPaymentLinkId = notes.paymentLinkId || null;
       }
 
       console.log("Webhookk update test, Invoice id: ",invoiceId)
@@ -135,6 +137,7 @@ export const processWebhookPaymentCompletion = async (
       const metadata = sessionObj?.metadata;
       if (metadata) {
         invoiceId = metadata.invoiceId || metadata.invoice_id || null;
+        localPaymentLinkId = metadata.paymentLinkId || null;
       }
       if (!invoiceId && sessionObj?.client_reference_id) {
         invoiceId = sessionObj.client_reference_id;
@@ -155,6 +158,7 @@ export const processWebhookPaymentCompletion = async (
         payload?.invoiceId ||
         payload?.invoice_id ||
         null;
+      localPaymentLinkId = payload?.metadata?.paymentLinkId || null;
       paymentLinkId = payload?.paymentLinkId || payload?.payment_link_id || null;
     }
 
@@ -172,7 +176,37 @@ export const processWebhookPaymentCompletion = async (
       if (found.length > 0) targetInvoice = found[0];
     }
 
-    // 2. Look up the local payment_links record via the provider's own link ID,
+    // 2. Direct lookup by localPaymentLinkId (our local UUID) extracted from metadata.
+    if (!targetInvoice && localPaymentLinkId) {
+      const foundLink = await db
+        .select({ id: paymentLinks.id, invoiceId: paymentLinks.invoiceId })
+        .from(paymentLinks)
+        .where(eq(paymentLinks.id, localPaymentLinkId))
+        .limit(1);
+        
+      if (foundLink.length > 0) {
+        const localLink = foundLink[0]!;
+        if (localLink.invoiceId) {
+          const found = await db
+            .select()
+            .from(invoices)
+            .where(eq(invoices.id, localLink.invoiceId))
+            .limit(1);
+          if (found.length > 0) targetInvoice = found[0];
+        }
+        
+        if (!targetInvoice) {
+          const found = await db
+            .select()
+            .from(invoices)
+            .where(eq(invoices.paymentLinkId, localLink.id))
+            .limit(1);
+          if (found.length > 0) targetInvoice = found[0];
+        }
+      }
+    }
+
+    // 3. Look up the local payment_links record via the provider's own link ID,
     //    then follow its invoiceId (backfilled at invoice-creation time).
     //    This is the primary path when the invoice was created after the link.
     if (!targetInvoice && paymentLinkId) {

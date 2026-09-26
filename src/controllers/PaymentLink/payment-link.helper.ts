@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import db from "@db";
 import { paymentLinks } from "@schema";
 import { eq } from "drizzle-orm";
@@ -26,20 +27,39 @@ type UpdatePaymentLink = Partial<{
 /**
  * Calls the provider adapter to create a payment link, then persists the
  * resulting URL and metadata in the payment_links table.
+ *
+ * The local UUID is generated *before* the provider call and injected into
+ * `metadata.paymentLinkId` so the provider echoes it back in every webhook
+ * event. This lets the webhook resolve the invoice via a direct local-UUID
+ * lookup — no provider link ID mapping needed.
  */
 export const createPaymentLink = async (input: CreatePaymentLinkInput) => {
   const { adapter, provider } = await resolveAdapter(input.providerId);
 
-  console.log(adapter, provider);
-  // Call the provider API
-  const providerResponse = await adapter.createPaymentLink(input.linkRequest);
+  // Generate the local UUID upfront so it can travel with the payment link
+  // through the provider and come back on every webhook event.
+  const localId = randomUUID();
 
-  // Persist the result — also store the provider's own link ID so the webhook
-  // can resolve it back to an invoice without needing the invoiceId upfront.
+  // Inject the local UUID into the provider metadata so the webhook can
+  // identify this exact DB record without any extra mapping step.
+  const enrichedLinkRequest: CreatePaymentLinkRequest = {
+    ...input.linkRequest,
+    metadata: {
+      ...input.linkRequest.metadata,
+      paymentLinkId: localId,
+    },
+  };
+
+  // Call the provider API with the enriched request
+  const providerResponse = await adapter.createPaymentLink(enrichedLinkRequest);
+
+  // Persist with the pre-generated UUID so the local record ID matches
+  // what was sent to the provider in metadata.
   const insertData = {
+    id: localId,
     companyId: input.companyId,
     provider: provider.type,
-    providerLinkId: (providerResponse as any).id ?? null,   // provider-side ID (plink_xxx etc.)
+    providerLinkId: (providerResponse as any).id ?? null,
     url: providerResponse.url,
     status: "active" as const,
     expiresAt: input.expiresAt
