@@ -34,10 +34,12 @@ export const createPaymentLink = async (input: CreatePaymentLinkInput) => {
   // Call the provider API
   const providerResponse = await adapter.createPaymentLink(input.linkRequest);
 
-  // Persist the result
+  // Persist the result — also store the provider's own link ID so the webhook
+  // can resolve it back to an invoice without needing the invoiceId upfront.
   const insertData = {
     companyId: input.companyId,
     provider: provider.type,
+    providerLinkId: (providerResponse as any).id ?? null,   // provider-side ID (plink_xxx etc.)
     url: providerResponse.url,
     status: "active" as const,
     expiresAt: input.expiresAt

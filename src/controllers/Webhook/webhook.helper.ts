@@ -162,6 +162,7 @@ export const processWebhookPaymentCompletion = async (
 
     let targetInvoice = null;
 
+    // 1. Direct lookup by invoiceId extracted from webhook payload metadata.
     if (invoiceId) {
       const found = await db
         .select()
@@ -171,29 +172,38 @@ export const processWebhookPaymentCompletion = async (
       if (found.length > 0) targetInvoice = found[0];
     }
 
-    if (!targetInvoice && paymentLinkId) {
-      const found = await db
-        .select()
-        .from(invoices)
-        .where(eq(invoices.paymentLinkId, paymentLinkId))
-        .limit(1);
-      if (found.length > 0) targetInvoice = found[0];
-    }
-
+    // 2. Look up the local payment_links record via the provider's own link ID,
+    //    then follow its invoiceId (backfilled at invoice-creation time).
+    //    This is the primary path when the invoice was created after the link.
     if (!targetInvoice && paymentLinkId) {
       const foundLink = await db
-        .select({ id: paymentLinks.id })
+        .select({ id: paymentLinks.id, invoiceId: paymentLinks.invoiceId })
         .from(paymentLinks)
-        .where(eq(paymentLinks.id, paymentLinkId))
+        .where(eq(paymentLinks.providerLinkId, paymentLinkId))
         .limit(1);
 
       if (foundLink.length > 0) {
-        const found = await db
-          .select()
-          .from(invoices)
-          .where(eq(invoices.paymentLinkId, foundLink[0]!.id))
-          .limit(1);
-        if (found.length > 0) targetInvoice = found[0];
+        const localLink = foundLink[0]!;
+
+        if (localLink.invoiceId) {
+          // Fast path: invoiceId already backfilled on the link record.
+          const found = await db
+            .select()
+            .from(invoices)
+            .where(eq(invoices.id, localLink.invoiceId))
+            .limit(1);
+          if (found.length > 0) targetInvoice = found[0];
+        }
+
+        if (!targetInvoice) {
+          // Slower fallback: search by local payment_link UUID on the invoice.
+          const found = await db
+            .select()
+            .from(invoices)
+            .where(eq(invoices.paymentLinkId, localLink.id))
+            .limit(1);
+          if (found.length > 0) targetInvoice = found[0];
+        }
       }
     }
 

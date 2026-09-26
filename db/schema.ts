@@ -44,12 +44,17 @@ export const paymentLinks = pgTable("payment_links", {
 	id: uuid().defaultRandom().primaryKey(),
 	companyId: uuid("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
 	provider: text().notNull(),
+	/** The provider's own payment-link ID (e.g. Razorpay `plink_xxx`, Stripe `plink_xxx`). */
+	providerLinkId: text("provider_link_id"),
+	/** Back-reference to the invoice that was created for this payment link (filled after invoice creation). */
+	invoiceId: uuid("invoice_id"),
 	url: text().notNull(),
 	status: text().default("active").notNull(),
 	expiresAt: timestamp("expires_at"),
 	createdAt: timestamp("created_at").default(sql`now()`),
 }, (table) => [
 	index("idx_payment_links_company_id").using("btree", table.companyId.asc().nullsLast()),
+	index("idx_payment_links_provider_link_id").using("btree", table.providerLinkId.asc().nullsLast()),
 	check("payment_links_status_check", sql`(status = ANY (ARRAY['active'::text, 'expired'::text, 'consumed'::text]))`),
 ]);
 

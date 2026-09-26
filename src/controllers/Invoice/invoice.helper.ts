@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import db from "@db";
-import { clients, invoices } from "@schema";
+import { clients, invoices, paymentLinks } from "@schema";
 import { and, eq } from "drizzle-orm";
 
 type Invoice = {
@@ -48,6 +48,16 @@ export const createInvoice = async (input: CreateInvoice) => {
   const response = await db.insert(invoices).values(insertData).returning();
   if (!response || response.length < 1)
     throw new Error("DB Error: Failed inserting row to invoice table");
+
+  // Backfill the invoice ID onto the payment link so the webhook can resolve
+  // the invoice without needing metadata on the provider-side link.
+  const newInvoice = response[0]!;
+  if (input.paymentLinkId) {
+    await db
+      .update(paymentLinks)
+      .set({ invoiceId: newInvoice.id })
+      .where(eq(paymentLinks.id, input.paymentLinkId));
+  }
 
   return response;
 };
@@ -99,7 +109,7 @@ export const deleteInvoiceById = async (id: string) => {
   return deleted ?? null;
 };
 
-import { notifications, paymentLinks } from "@schema";
+import { notifications } from "@schema";
 import { sendInvoiceNotification } from "@services/notification/index";
 
 export const notifyInvoiceById = async (id: string, userId: string) => {
@@ -170,7 +180,7 @@ export const notifyInvoiceById = async (id: string, userId: string) => {
 
     return updated;
   } catch (err) {
-    // Log failed notification
+    // Log failed notification  
     await db.insert(notifications).values({
       to,
       userId,
