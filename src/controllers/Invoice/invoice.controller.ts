@@ -57,6 +57,7 @@ export const createInvoiceController = async (
 
     res.status(201).json({ status: "success", service: "invoice | create", data: response });
   } catch (err) {
+    console.log(err);
     next(err);
   }
 };

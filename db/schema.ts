@@ -52,6 +52,7 @@ export const paymentLinks = pgTable("payment_links", {
 	status: text().default("active").notNull(),
 	expiresAt: timestamp("expires_at"),
 	createdAt: timestamp("created_at").default(sql`now()`),
+	updatedAt: timestamp("updated_at").default(sql`now()`),
 }, (table) => [
 	index("idx_payment_links_company_id").using("btree", table.companyId.asc().nullsLast()),
 	index("idx_payment_links_provider_link_id").using("btree", table.providerLinkId.asc().nullsLast()),
