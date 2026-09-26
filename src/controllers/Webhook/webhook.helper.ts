@@ -49,7 +49,7 @@ export const createWebhook = async (
   input: CreateWebhookInput,
   baseUrl: string,
 ) => {
-  const { adapter, provider } = await resolveAdapter(input.providerId);
+  const { adapter, provider } = await resolveAdapter(input.providerId, input.companyId);
 
   const { url: localUrl, secret } = generateLocalWebhookUrl(
     provider.type,

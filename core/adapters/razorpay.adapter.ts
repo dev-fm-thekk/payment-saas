@@ -53,7 +53,7 @@ export class RazorpayAdapter extends BasePaymentProvider {
           sms: false,
           whatsapp: false,
         },
-      });
+      } as any);
 
       return this.normalisePaymentLink(raw);
     } catch (error) {

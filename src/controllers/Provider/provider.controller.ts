@@ -14,11 +14,11 @@ const ProviderTypeEnum = z.enum(["razorpay", "stripe", "paypal"]);
 const CreateProviderSchema = z.object({
   companyId: z.string().uuid(),
   type: ProviderTypeEnum,
-  credentials: z.record(z.unknown()),
+  credentials: z.record(z.string(), z.unknown()),
 });
 
 const UpdateProviderSchema = z.object({
-  credentials: z.record(z.unknown()).optional(),
+  credentials: z.record(z.string(), z.unknown()).optional(),
 });
 
 /*

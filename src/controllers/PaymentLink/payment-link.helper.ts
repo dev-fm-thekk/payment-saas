@@ -34,7 +34,7 @@ type UpdatePaymentLink = Partial<{
  * lookup — no provider link ID mapping needed.
  */
 export const createPaymentLink = async (input: CreatePaymentLinkInput) => {
-  const { adapter, provider } = await resolveAdapter(input.providerId);
+  const { adapter, provider } = await resolveAdapter(input.providerId, input.companyId);
 
   // Generate the local UUID upfront so it can travel with the payment link
   // through the provider and come back on every webhook event.
